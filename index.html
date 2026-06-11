@@ -1,0 +1,5554 @@
+<!-- Scene animations: Card Issuance implemented -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1440" />
+    <title>Stablecoin Card Demo</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        min-width: 1440px;
+      }
+
+      /* ========== HEADER BAR ========== */
+      .header {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        border-bottom: 1px solid #1e293b;
+        flex-shrink: 0;
+      }
+
+      .logo-placeholder {
+        width: 120px;
+        height: 36px;
+        background: #334155;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: #94a3b8;
+        letter-spacing: 0.06em;
+      }
+
+      .header-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .scene-btn-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* ========== SCENE BUTTONS ========== */
+      .scene-btn {
+        width: 80px;
+        height: 50px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        border: 2px solid #475569;
+        border-radius: 8px;
+        background: #1e293b;
+        cursor: pointer;
+        padding: 4px;
+        transition: border-color 0.2s, color 0.2s;
+      }
+
+      .scene-btn .scene-label {
+        font-size: 9px;
+        font-weight: 600;
+        color: #64748b;
+        line-height: 1;
+      }
+
+      .scene-btn.active {
+        border-color: #10b981;
+      }
+
+      .scene-btn.active .scene-label {
+        color: #fff;
+      }
+
+      .icon-box {
+        width: 32px;
+        height: 32px;
+        background: #334155;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .icon-box img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+      }
+
+      /* ========== SUB-HEADER: SELECTED SCENE + CONTROLS ========== */
+      .sub-header {
+        padding: 10px 20px 12px;
+        border-bottom: 1px solid #1e293b;
+        flex-shrink: 0;
+      }
+
+      .selected-scene {
+        font-size: 12px;
+        color: #64748b;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      .selected-scene span {
+        color: #94a3b8;
+      }
+
+      .controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .ctrl-btn {
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 8px 20px;
+        border: none;
+        border-radius: 999px;
+        background: #334155;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      .ctrl-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .step-indicator {
+        font-size: 11px;
+        color: #10b981;
+        text-align: center;
+        margin-top: 8px;
+        min-height: 16px;
+      }
+
+      /* ========== MAIN THREE COLUMNS ========== */
+      .main {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        height: calc(100vh - 60px - 72px);
+        position: relative;
+      }
+
+      .diagram-arrows {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 12;
+        overflow: visible;
+      }
+
+      .column {
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #1e293b;
+        min-width: 0;
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Customer narrower; System Flow gets the extra width */
+      #col-mobile {
+        flex: 0 0 22%;
+        max-width: 22%;
+      }
+
+      #col-flow {
+        flex: 1;
+        min-width: 0;
+        overflow: visible;
+      }
+
+      #col-flow .col-body {
+        overflow: visible;
+      }
+
+      #col-merchant {
+        flex: 0 0 28%;
+        max-width: 28%;
+      }
+
+      .column:last-child {
+        border-right: none;
+      }
+
+      .col-header {
+        text-align: center;
+        padding: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        border-bottom: 1px solid #1e293b;
+        flex-shrink: 0;
+      }
+
+      .col-body {
+        flex: 1;
+        overflow: hidden;
+        padding: 12px;
+        position: relative;
+      }
+
+      /* ========== LEFT: MERCHANT DASHBOARD ========== */
+      .browser-frame {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #111827;
+      }
+
+      .browser-bar {
+        height: 40px;
+        background: #334155;
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        flex-shrink: 0;
+      }
+
+      .url-bar {
+        flex: 1;
+        background: #1e293b;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #94a3b8;
+      }
+
+      .browser-content {
+        flex: 1;
+        background: #0f172a;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        overflow: hidden;
+      }
+
+      .stat-cards {
+        display: flex;
+        gap: 10px;
+      }
+
+      .stat-card {
+        flex: 1;
+        background: #1e293b;
+        border-radius: 8px;
+        padding: 12px;
+      }
+
+      .stat-card .label {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-bottom: 6px;
+      }
+
+      .stat-card .value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #10b981;
+      }
+
+      .orders-table-wrap {
+        flex: 1;
+        background: #1e293b;
+        border-radius: 8px;
+        overflow: hidden;
+        min-height: 0;
+      }
+
+      .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .orders-table th {
+        text-align: left;
+        padding: 10px 12px;
+        color: #94a3b8;
+        font-weight: 600;
+        border-bottom: 1px solid #334155;
+        background: #172033;
+      }
+
+      .orders-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #334155;
+        color: #e2e8f0;
+      }
+
+      .settlement-box {
+        margin-top: auto;
+        border: 2px solid #10b981;
+        border-radius: 8px;
+        padding: 14px 16px;
+        background: #0f2a1a;
+      }
+
+      .settlement-box .label {
+        font-size: 11px;
+        color: #6ee7b7;
+        margin-bottom: 4px;
+      }
+
+      .settlement-box .value {
+        font-size: 26px;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      /* ========== MIDDLE: FLOW DIAGRAM ========== */
+      .flow-wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: visible;
+      }
+
+      .flow-path {
+        fill: none;
+        stroke: #10b981;
+        stroke-width: 2;
+        opacity: 0;
+        transition: opacity 0.35s, filter 0.35s;
+      }
+
+      .flow-path.forward {
+        stroke-dasharray: none;
+      }
+
+      .flow-path.return {
+        stroke-dasharray: 7 5;
+      }
+
+      .flow-path.fund {
+        stroke: #ef4444;
+        stroke-dasharray: none;
+      }
+
+      .flow-path.fund.active {
+        filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.65));
+      }
+
+      .flow-path.lit {
+        opacity: 0.9;
+      }
+
+      .flow-path.active {
+        opacity: 1;
+        filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.65));
+        animation: path-pulse 0.85s ease-in-out infinite;
+      }
+
+      .flow-path.return.active {
+        animation: dash-flow 0.75s linear infinite, path-pulse 0.85s ease-in-out infinite;
+      }
+
+      @keyframes dash-flow {
+        to {
+          stroke-dashoffset: -24;
+        }
+      }
+
+      @keyframes path-pulse {
+        0%,
+        100% {
+          stroke-width: 2;
+        }
+        50% {
+          stroke-width: 2.8;
+        }
+      }
+
+      .flow-legend {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 6px 12px;
+        flex-shrink: 0;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        color: #94a3b8;
+        font-size: 9px;
+        white-space: nowrap;
+      }
+
+      .legend-line {
+        width: 28px;
+        height: 0;
+        border-top: 2px solid #64748b;
+      }
+
+      .legend-line.solid-green {
+        border-top: 2px solid #10b981;
+      }
+
+      .legend-line.dashed-green {
+        border-top: 2px dashed #10b981;
+      }
+
+      .legend-line.solid-red {
+        border-top: 2px solid #ef4444;
+      }
+
+      .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+      }
+
+      /* Swimlanes */
+      .lanes-row {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .issuance-matrix {
+        flex: 1;
+        display: grid;
+        grid-template-rows: auto 1fr 1fr;
+        width: 100%;
+        min-height: 0;
+      }
+
+      /* Onramp: L1, staggered L2, notify, gap, L3 accounts */
+      .onramp-matrix {
+        flex: 1;
+        display: grid;
+        grid-template-rows: auto minmax(130px, 1.5fr) 0.65fr 40px 0.9fr;
+        width: 100%;
+        min-height: 0;
+      }
+
+      .onramp-l2-stagger {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: 1fr 1fr;
+        width: 100%;
+        min-height: 130px;
+        border-bottom: 1px solid #1e293b;
+      }
+
+      .onramp-l2-stagger .matrix-cell {
+        border-right: 1px solid #1e293b;
+        border-bottom: none;
+      }
+
+      .onramp-l2-stagger .wl-conv-cell {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        align-items: center;
+      }
+
+      .onramp-l2-stagger .debit-cell {
+        grid-column: 2;
+        grid-row: 1;
+        align-items: flex-start;
+        padding-top: 8px;
+      }
+
+      .onramp-l2-stagger .exec-cell {
+        grid-column: 3;
+        grid-row: 1 / 3;
+        align-items: center;
+      }
+
+      .onramp-l2-stagger .waas-cell {
+        grid-column: 4;
+        grid-row: 1 / 3;
+        align-items: center;
+      }
+
+      .matrix-header-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .matrix-header {
+        text-align: center;
+        padding: 10px 6px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #e2e8f0;
+        line-height: 1.3;
+        border-bottom: 1px solid #1e293b;
+        border-right: 1px solid #1e293b;
+        background: #111827;
+        min-height: 50px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .matrix-header:last-child {
+        border-right: none;
+      }
+
+      .matrix-node-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        align-items: center;
+        justify-items: center;
+        min-height: 0;
+      }
+
+      .onramp-matrix .matrix-row-layer3 {
+        border-top: 1px solid #1e293b;
+        align-items: flex-end;
+        padding-bottom: 8px;
+      }
+
+      .onramp-matrix .matrix-row-layer3 .account-wrap {
+        margin-top: 8px;
+      }
+
+      .onramp-matrix .matrix-row-layer2b {
+        align-items: center;
+        min-height: 0;
+      }
+
+      .onramp-matrix .matrix-row-gap {
+        grid-column: 1 / -1;
+        min-height: 40px;
+      }
+
+      .onramp-matrix .matrix-row-layer3b {
+        align-items: flex-end;
+        padding-bottom: 8px;
+      }
+
+      .onramp-matrix .matrix-row-layer3b .account-wrap {
+        margin-top: 4px;
+      }
+
+      .matrix-cell {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid #1e293b;
+        padding: 14px 8px;
+        background: #111827;
+      }
+
+      .matrix-cell-empty {
+        min-height: 48px;
+      }
+
+      .matrix-row-layer3 .matrix-cell {
+        padding: 10px 8px 14px;
+      }
+
+      .matrix-cell:last-child {
+        border-right: none;
+      }
+
+      .lanes-extra {
+        display: flex;
+        flex: 1;
+        align-items: stretch;
+        min-height: 0;
+      }
+
+      .swim-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        background: #111827;
+        border-right: 1px solid #1e293b;
+        position: relative;
+        z-index: 4;
+      }
+
+      .swim-col:last-child {
+        border-right: none;
+      }
+
+      .swim-col-header {
+        text-align: center;
+        padding: 10px 6px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #e2e8f0;
+        line-height: 1.3;
+        border-bottom: 1px solid #1e293b;
+        flex-shrink: 0;
+      }
+
+      .matrix-header.wl-header {
+        color: #10b981;
+      }
+
+      .wl-badge {
+        display: block;
+        font-size: 9px;
+        color: #10b981;
+        font-weight: 600;
+        margin-top: 3px;
+      }
+
+      .swim-col-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 8px 12px;
+        gap: 0;
+        position: relative;
+        min-height: 0;
+      }
+
+      .flow-grid {
+        display: grid;
+        grid-template-rows: auto auto;
+        row-gap: 56px;
+        width: 100%;
+        align-content: center;
+        justify-items: center;
+        flex: 1;
+        padding: 8px 0;
+      }
+
+      .flow-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        min-height: 52px;
+      }
+
+      .lane-account {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .process-node {
+        width: 100%;
+        max-width: 120px;
+        padding: 14px 8px;
+        background: #1e293b;
+        border-radius: 10px;
+        font-size: 10px;
+        color: #64748b;
+        text-align: center;
+        border: 1px solid #334155;
+        flex-shrink: 0;
+        line-height: 1.35;
+        position: relative;
+        z-index: 3;
+        transition: border-color 0.35s, background 0.35s, color 0.35s, box-shadow 0.35s;
+      }
+
+      .process-node.active {
+        border-color: #10b981;
+        background: #0f2a1a;
+        color: #6ee7b7;
+        box-shadow: 0 0 14px rgba(16, 185, 129, 0.45);
+      }
+
+      .process-node.done {
+        border-color: #059669;
+        background: #134e4a;
+        color: #a7f3d0;
+      }
+
+      .v-connector-label {
+        font-size: 8px;
+        color: #475569;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+        letter-spacing: 0.02em;
+      }
+
+      .matrix-cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .matrix-cols-6 {
+        grid-template-columns: repeat(6, 1fr);
+      }
+
+      .transaction-matrix {
+        flex: 1;
+        display: none;
+        grid-template-rows: auto minmax(64px, 0.65fr) minmax(64px, 0.65fr) minmax(100px, 1.1fr) minmax(72px, 0.8fr) minmax(64px, 0.65fr) 36px 0.85fr 0.85fr;
+        width: 100%;
+        min-height: 0;
+      }
+
+      .transaction-matrix .matrix-row-gap {
+        grid-column: 1 / -1;
+        min-height: 36px;
+      }
+
+      .transaction-matrix .matrix-row-txn-l6 {
+        border-top: 1px solid #1e293b;
+        align-items: flex-end;
+        padding-bottom: 8px;
+      }
+
+      .transaction-matrix .matrix-row-txn-l6 .account-wrap {
+        margin-top: 8px;
+      }
+
+      .transaction-matrix .matrix-row-txn-l7 {
+        align-items: flex-end;
+        padding-bottom: 8px;
+      }
+
+      .transaction-matrix .matrix-row-txn-l7 .account-wrap {
+        margin-top: 4px;
+      }
+
+      .transaction-matrix .matrix-header-row {
+        grid-template-columns: repeat(6, 1fr);
+      }
+
+      .txn-l3-stagger {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: 1fr 1fr;
+        width: 100%;
+        min-height: 100px;
+        border-bottom: 1px solid #1e293b;
+      }
+
+      .txn-l3-stagger .matrix-cell {
+        border-right: 1px solid #1e293b;
+        border-bottom: none;
+      }
+
+      .txn-l3-stagger .wl-calc-cell {
+        grid-column: 2;
+        grid-row: 1 / 3;
+        align-items: center;
+      }
+
+      .txn-l3-stagger .waas-instr-cell {
+        grid-column: 3;
+        grid-row: 1;
+        align-items: flex-start;
+        padding-top: 8px;
+      }
+
+      .txn-l3-stagger .lp-instr-cell {
+        grid-column: 4;
+        grid-row: 2;
+        align-items: flex-end;
+        padding-bottom: 8px;
+      }
+
+      .transaction-matrix .matrix-row-txn-l1,
+      .transaction-matrix .matrix-row-txn-l2,
+      .transaction-matrix .matrix-row-txn-l4,
+      .transaction-matrix .matrix-row-txn-l5 {
+        align-items: center;
+        min-height: 0;
+      }
+
+      body[data-scene='card-issuance'] .lanes-extra,
+      body[data-scene='card-issuance'] .onramp-matrix,
+      body[data-scene='card-issuance'] .txn-v-flow,
+      body[data-scene='card-issuance'] #col-merchant {
+        display: none;
+      }
+
+      body[data-scene='onramp'] .issuance-matrix,
+      body[data-scene='onramp'] .lanes-extra,
+      body[data-scene='onramp'] .txn-v-flow,
+      body[data-scene='onramp'] #col-merchant {
+        display: none;
+      }
+
+      body[data-scene='transaction'] .issuance-matrix,
+      body[data-scene='transaction'] .onramp-matrix,
+      body[data-scene='transaction'] .lanes-extra {
+        display: none;
+      }
+
+      /* ========== TRANSACTION: VERTICAL SWIMLANES ========== */
+      .txn-v-flow {
+        position: relative;
+        flex: 1;
+        display: none;
+        flex-direction: column;
+        min-height: 0;
+        overflow: visible;
+        background: #111827;
+      }
+
+      .txn-mch-fund-anchor {
+        position: absolute;
+        right: 2px;
+        width: 6px;
+        height: 6px;
+        pointer-events: none;
+        z-index: 3;
+      }
+
+      body[data-scene='transaction'] .txn-v-flow {
+        display: flex;
+      }
+
+      .txn-svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 6;
+        overflow: visible;
+      }
+
+      .txn-matrix {
+        flex: 1;
+        display: grid;
+        grid-template-rows: auto repeat(8, minmax(26px, 0.28fr)) 0 minmax(38px, 0.4fr) minmax(36px, 0.38fr) minmax(34px, 0.36fr);
+        width: 100%;
+        min-height: 0;
+        padding-top: 36px;
+      }
+
+      .txn-matrix .matrix-header-row {
+        grid-template-columns: repeat(6, 1fr);
+      }
+
+      .txn-matrix .matrix-cell {
+        padding: 8px 6px;
+      }
+
+      .txn-matrix .matrix-txn-l1,
+      .txn-matrix .matrix-txn-l2,
+      .txn-matrix .matrix-txn-l3,
+      .txn-matrix .matrix-txn-l4,
+      .txn-matrix .matrix-txn-l5,
+      .txn-matrix .matrix-txn-l6,
+      .txn-matrix .matrix-txn-l7,
+      .txn-matrix .matrix-txn-l8 {
+        align-items: center;
+        min-height: 0;
+        padding: 2px 0;
+      }
+
+      .txn-matrix .matrix-row-gap {
+        grid-column: 1 / -1;
+        min-height: 2px;
+      }
+
+      .txn-matrix .matrix-txn-fund-l1 {
+        border-top: 1px solid #1e293b;
+        align-items: center;
+        min-height: 0;
+        padding: 4px 0 2px;
+      }
+
+      .txn-matrix .matrix-txn-fund-l2 {
+        border-top: 1px dashed #1e293b;
+        align-items: center;
+        min-height: 0;
+        padding: 2px 0;
+      }
+
+      .txn-matrix .matrix-txn-fund-l3 {
+        border-top: 1px dashed #1e293b;
+        align-items: center;
+        min-height: 0;
+        padding: 2px 0 6px;
+      }
+
+      .txn-matrix .matrix-txn-fund-l1 .account-wrap,
+      .txn-matrix .matrix-txn-fund-l2 .account-wrap,
+      .txn-matrix .matrix-txn-fund-l3 .account-wrap {
+        margin-top: 0;
+      }
+
+      .txn-v-flow .account-wrap {
+        width: 58px;
+        position: relative;
+        z-index: 8;
+      }
+
+      .txn-v-flow .account-wrap .cylinder {
+        width: 44px;
+        height: 38px;
+      }
+
+      .txn-v-flow .account-wrap .cylinder-top,
+      .txn-v-flow .account-wrap .cylinder-body,
+      .txn-v-flow .account-wrap .cylinder-bottom {
+        width: 44px;
+      }
+
+      .txn-v-flow .account-wrap .cylinder-top,
+      .txn-v-flow .account-wrap .cylinder-bottom {
+        height: 12px;
+      }
+
+      .txn-v-flow .account-wrap .cylinder-body {
+        height: 26px;
+        top: 6px;
+      }
+
+      .txn-v-flow .account-delta {
+        font-size: 9px;
+        min-height: 14px;
+        margin-top: 4px;
+        padding-bottom: 2px;
+        font-weight: 600;
+        text-align: center;
+        line-height: 1.25;
+        position: relative;
+        z-index: 9;
+        background: rgba(15, 23, 42, 0.85);
+      }
+
+      .txn-v-flow .account-delta .pos {
+        color: #6ee7b7;
+        display: block;
+      }
+
+      .txn-v-flow .account-delta .neg {
+        color: #f87171;
+        display: block;
+      }
+
+      .txn-v-flow .account-delta.neg {
+        color: #f87171;
+      }
+
+      .txn-v-flow .account-delta.pos {
+        color: #6ee7b7;
+      }
+
+      .txn-v-flow .process-node {
+        width: 100%;
+        max-width: 118px;
+        min-width: 92px;
+        font-size: 9px;
+        padding: 7px 6px;
+        line-height: 1.35;
+      }
+
+      .txn-app-anchor {
+        position: absolute;
+        left: -36px;
+        width: 6px;
+        height: 6px;
+        pointer-events: none;
+        z-index: 3;
+      }
+
+      .txn-v-flow .process-node.inactive {
+        opacity: 0.35;
+        border-color: #334155;
+      }
+
+      .txn-v-flow .account-wrap .account-label {
+        font-size: 8px;
+      }
+
+      .txn-v-flow .account-wrap .account-value {
+        display: none;
+      }
+
+      .txn-v-flow .account-wrap .cylinder-top,
+      .txn-v-flow .account-wrap .cylinder-body,
+      .txn-v-flow .account-wrap .cylinder-bottom {
+        background: #1e293b;
+      }
+
+      .account-value.flash-green {
+        animation: bal-flash-green 0.8s ease;
+      }
+
+      .account-value.flash-red {
+        animation: bal-flash-red 0.8s ease;
+      }
+
+      @keyframes bal-flash-green {
+        0%,
+        100% {
+          color: #fff;
+        }
+        40% {
+          color: #6ee7b7;
+        }
+      }
+
+      @keyframes bal-flash-red {
+        0%,
+        100% {
+          color: #fff;
+        }
+        40% {
+          color: #f87171;
+        }
+      }
+
+      .txn-flow-path {
+        fill: none;
+        opacity: 0;
+        transition: opacity 0.4s;
+      }
+
+      .txn-flow-path.info-forward {
+        stroke: #10b981;
+        stroke-width: 2;
+        stroke-dasharray: none;
+      }
+
+      .txn-flow-path.info-return {
+        stroke: #10b981;
+        stroke-width: 2;
+        stroke-dasharray: 6 4;
+      }
+
+      .txn-flow-path.fund {
+        stroke: #ef4444;
+        stroke-width: 3;
+        stroke-dasharray: none;
+      }
+
+      .txn-flow-path.lit {
+        opacity: 1;
+      }
+
+      .txn-flow-path.active.info-forward,
+      .txn-flow-path.active.info-return {
+        filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.55));
+      }
+
+      .txn-flow-path.active.fund {
+        filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.55));
+      }
+
+      .txn-edge-label {
+        font-size: 8px;
+        fill: #6ee7b7;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.4s;
+        text-anchor: middle;
+        dominant-baseline: middle;
+      }
+
+      .txn-edge-label.lit {
+        opacity: 1;
+      }
+
+      .txn-edge-label.fund-label {
+        fill: #fca5a5;
+      }
+
+      .txn-fund-dot {
+        fill: #ef4444;
+        opacity: 0;
+      }
+
+      .txn-fund-dot.active {
+        opacity: 1;
+      }
+
+      .txn-success-banner {
+        flex-shrink: 0;
+        padding: 10px 14px;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: #6ee7b7;
+        background: #0f2a1a;
+        border-top: 1px solid #10b981;
+        display: none;
+      }
+
+      .txn-success-banner.visible {
+        display: block;
+      }
+
+      .merchant-pay-anchor {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(-50%);
+      }
+
+      .account-wrap .account-value {
+        font-size: 9px;
+      }
+
+      /* Onramp APP */
+      .balance-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .bal-chip {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: #94a3b8;
+      }
+
+      .bal-chip.crypto {
+        border-color: #10b981;
+        color: #6ee7b7;
+        background: #0f2a1a;
+      }
+
+      .buy-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 14px;
+        text-align: center;
+      }
+
+      .exchange-box {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+      }
+
+      .exchange-box .box-label {
+        font-size: 10px;
+        color: #64748b;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .exchange-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .coin-select {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #e2e8f0;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: #0f172a;
+        border: 1px solid #334155;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .coin-select select {
+        background: transparent;
+        border: none;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        outline: none;
+      }
+
+      .exchange-input {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 20px;
+        font-weight: 700;
+        text-align: right;
+        font-family: inherit;
+        outline: none;
+      }
+
+      .exchange-amount-readonly {
+        flex: 1;
+        text-align: right;
+        font-size: 20px;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      .exchange-amount-readonly.empty {
+        color: #64748b;
+      }
+
+      .onramp-rate-hint {
+        margin: 5px 0 0;
+        font-size: 10px;
+        color: #64748b;
+        text-align: right;
+        line-height: 1.3;
+      }
+
+      .exchange-input::placeholder {
+        color: #475569;
+      }
+
+      .onramp-fees {
+        margin: 12px 0;
+        font-size: 11px;
+        color: #94a3b8;
+      }
+
+      .onramp-fees .row {
+        display: flex;
+        justify-content: space-between;
+        margin: 4px 0;
+      }
+
+      .onramp-fees .total {
+        color: #fff;
+        font-weight: 700;
+        font-size: 12px;
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid #334155;
+      }
+
+      .onramp-status {
+        margin-top: 8px;
+        font-size: 11px;
+        text-align: center;
+        min-height: 28px;
+        color: #94a3b8;
+      }
+
+      .onramp-status.success {
+        color: #6ee7b7;
+        font-weight: 600;
+      }
+
+      /* Cylinder account shape */
+      .account-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-shrink: 0;
+        width: 72px;
+      }
+
+      .cylinder {
+        width: 56px;
+        height: 44px;
+        position: relative;
+      }
+
+      .cylinder-top {
+        width: 56px;
+        height: 14px;
+        background: #334155;
+        border-radius: 50%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 2;
+        border: 1px solid #475569;
+      }
+
+      .cylinder-body {
+        width: 56px;
+        height: 32px;
+        background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+        position: absolute;
+        top: 7px;
+        left: 0;
+        border-left: 1px solid #475569;
+        border-right: 1px solid #475569;
+      }
+
+      .cylinder-bottom {
+        width: 56px;
+        height: 14px;
+        background: #1e293b;
+        border-radius: 50%;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        border: 1px solid #475569;
+      }
+
+      .account-label {
+        font-size: 8px;
+        color: #64748b;
+        margin-top: 4px;
+        text-align: center;
+        line-height: 1.2;
+      }
+
+      .account-value {
+        font-size: 10px;
+        font-weight: 700;
+        color: #fff;
+        margin-top: 2px;
+      }
+
+      /* ========== LEFT: MOBILE APP (Customer View) ========== */
+      .mobile-col {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+
+      .phone-shell {
+        width: 260px;
+        height: 520px;
+        background: #1e293b;
+        border-radius: 36px;
+        padding: 12px;
+        position: relative;
+        flex-shrink: 0;
+        z-index: 6;
+      }
+
+      .phone-notch {
+        width: 80px;
+        height: 22px;
+        background: #0f172a;
+        border-radius: 0 0 12px 12px;
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+      }
+
+      .phone-screen {
+        width: 100%;
+        height: 100%;
+        background: #0f172a;
+        border-radius: 28px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 36px 16px 16px;
+        position: relative;
+      }
+
+      #appPanelTransaction.visible,
+      #appPanelOnramp.visible {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .onramp-success-icon {
+        width: 44px;
+        height: 44px;
+        margin: 4px auto 10px;
+        border-radius: 50%;
+        background: #0f2a1a;
+        border: 2px solid #10b981;
+        color: #6ee7b7;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 40px;
+      }
+
+      .app-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #fff;
+        margin-bottom: 14px;
+      }
+
+      .app-topbar .back {
+        color: #94a3b8;
+        font-size: 11px;
+      }
+
+      .app-topbar .title {
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .app-topbar .spacer {
+        width: 36px;
+      }
+
+      .greeting {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-bottom: 14px;
+      }
+
+      .card-graphic {
+        width: 220px;
+        height: 120px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        padding: 12px 14px;
+        position: relative;
+        margin-bottom: 16px;
+        align-self: center;
+      }
+
+      .card-bank-logo {
+        width: 72px;
+        height: 28px;
+        object-fit: contain;
+        object-position: left center;
+        display: block;
+      }
+
+      .card-bank-logo:not([src]),
+      .card-bank-logo[src=''] {
+        display: none;
+      }
+
+      .card-bank-fallback {
+        font-size: 10px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.9);
+        letter-spacing: 0.08em;
+      }
+
+      .card-graphic:has(.card-bank-logo[src]:not([src=''])) .card-bank-fallback {
+        display: none;
+      }
+
+      .card-bank {
+        font-size: 10px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.9);
+        letter-spacing: 0.08em;
+      }
+
+      .card-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 8px;
+        font-weight: 700;
+        color: #10b981;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      .card-pan {
+        position: absolute;
+        top: 50%;
+        left: 14px;
+        transform: translateY(-50%);
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        letter-spacing: 0.12em;
+      }
+
+      .card-visa {
+        position: absolute;
+        bottom: 12px;
+        right: 14px;
+        font-size: 18px;
+        font-weight: 700;
+        font-style: italic;
+        color: #fff;
+      }
+
+      .balance-section {
+        margin-bottom: 16px;
+      }
+
+      .balance-section .label {
+        font-size: 11px;
+        color: #64748b;
+        margin-bottom: 4px;
+      }
+
+      .balance-section .amount {
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      .balance-section .equiv {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 2px;
+      }
+
+      .pay-pref {
+        margin-bottom: auto;
+      }
+
+      .pay-pref .label {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-bottom: 8px;
+      }
+
+      .qr-box {
+        width: 130px;
+        height: 130px;
+        margin: 0 auto 12px;
+        border: 2px dashed #334155;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 10px;
+        color: #64748b;
+        text-align: center;
+        padding: 8px;
+        transition: border-color 0.3s, background 0.3s;
+      }
+
+      .qr-box.ready {
+        border-color: #10b981;
+        border-style: solid;
+        background: #0f172a;
+        color: #6ee7b7;
+      }
+
+      .qr-pattern {
+        display: none;
+        width: 72px;
+        height: 72px;
+        background:
+          linear-gradient(90deg, #10b981 2px, transparent 2px) 0 0 / 8px 8px,
+          linear-gradient(#10b981 2px, transparent 2px) 0 0 / 8px 8px;
+        border: 3px solid #10b981;
+        border-radius: 4px;
+      }
+
+      .qr-box.ready .qr-pattern {
+        display: block;
+      }
+
+      .qr-box.ready .qr-placeholder-text {
+        display: none;
+      }
+
+      .fiat-flag {
+        width: 18px;
+        height: 13px;
+        object-fit: cover;
+        border-radius: 2px;
+        vertical-align: middle;
+        flex-shrink: 0;
+      }
+
+      .fiat-flag-sm {
+        width: 16px;
+        height: 12px;
+      }
+
+      .fiat-flag-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .qr-modal-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.72);
+        z-index: 40;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 8px;
+      }
+
+      .qr-modal-overlay.open {
+        display: flex;
+      }
+
+      .qr-modal {
+        width: calc(100% - 4px);
+        max-width: 196px;
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+        overflow: hidden;
+        animation: qr-modal-in 0.22s ease;
+      }
+
+      @keyframes qr-modal-in {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .qr-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border-bottom: 1px solid #1e293b;
+        font-size: 11px;
+        font-weight: 700;
+        color: #e2e8f0;
+      }
+
+      .qr-modal-close {
+        font-family: inherit;
+        border: none;
+        background: #1e293b;
+        color: #94a3b8;
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+      }
+
+      .qr-modal-body {
+        padding: 10px 8px 10px;
+        text-align: center;
+      }
+
+      .qr-modal-canvas-wrap {
+        background: #fff;
+        border-radius: 10px;
+        padding: 8px;
+        display: inline-block;
+        margin-bottom: 8px;
+      }
+
+      #txnQrHost {
+        width: 132px;
+        height: 132px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #txnQrHost img,
+      #txnQrHost canvas {
+        display: block;
+        width: 132px !important;
+        height: 132px !important;
+      }
+
+      .qr-modal-amount {
+        font-size: 15px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 2px;
+      }
+
+      .qr-modal-meta {
+        font-size: 9px;
+        color: #64748b;
+        line-height: 1.35;
+      }
+
+      .qr-modal-paynow {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+        font-size: 9px;
+        color: #6ee7b7;
+        font-weight: 600;
+      }
+
+      .pref-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .pref-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #e2e8f0;
+      }
+
+      .pref-item .pref-rank {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #334155;
+        color: #94a3b8;
+        font-size: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .pref-item:first-child .pref-rank {
+        background: #0f2a1a;
+        color: #10b981;
+      }
+
+      .pref-order-btns {
+        margin-left: auto;
+        display: flex;
+        gap: 3px;
+      }
+
+      .pref-order-btns button {
+        font-family: inherit;
+        width: 22px;
+        height: 22px;
+        border: 1px solid #475569;
+        border-radius: 4px;
+        background: #0f172a;
+        color: #94a3b8;
+        font-size: 10px;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+      }
+
+      .pref-order-btns button:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      .pref-order-btns button:not(:disabled):hover {
+        border-color: #10b981;
+        color: #10b981;
+      }
+
+      .txn-status {
+        margin-top: 10px;
+        font-size: 11px;
+        text-align: center;
+        min-height: 32px;
+        line-height: 1.4;
+        color: #94a3b8;
+      }
+
+      .txn-status.success {
+        color: #6ee7b7;
+        font-weight: 600;
+      }
+
+      .pills {
+        display: flex;
+        gap: 8px;
+      }
+
+      .pill {
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        border: 1px solid #334155;
+        color: #64748b;
+        background: #1e293b;
+      }
+
+      .pill.active {
+        border-color: #10b981;
+        background: #0f2a1a;
+        color: #10b981;
+      }
+
+      .pay-btn {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        background: #10b981;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+        margin-top: 12px;
+        transition: background 0.2s, opacity 0.2s;
+      }
+
+      .pay-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .pay-btn.pulse {
+        animation: btn-pulse 1s ease-in-out infinite;
+      }
+
+      @keyframes btn-pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+        }
+      }
+
+      .app-panel {
+        display: none;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .app-panel.visible {
+        display: flex;
+      }
+
+      .card-empty {
+        width: 220px;
+        height: 120px;
+        border-radius: 14px;
+        border: 2px dashed #334155;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 11px;
+        color: #64748b;
+        margin-bottom: 16px;
+        align-self: center;
+        padding: 12px;
+      }
+
+      .card-graphic.hidden {
+        display: none;
+      }
+
+      .card-graphic.visible {
+        display: block;
+      }
+
+      .issuance-status {
+        margin-top: 10px;
+        font-size: 11px;
+        text-align: center;
+        min-height: 32px;
+        line-height: 1.4;
+        color: #94a3b8;
+      }
+
+      .issuance-status.success {
+        color: #6ee7b7;
+        font-weight: 600;
+      }
+
+      .wallet-id-line {
+        font-size: 9px;
+        color: #64748b;
+        margin-top: 6px;
+        text-align: center;
+        word-break: break-all;
+      }
+
+      .wallet-id-line.active {
+        color: #6ee7b7;
+      }
+
+      .phone-screen.app-running {
+        outline: 2px solid #10b981;
+        outline-offset: -2px;
+      }
+
+      .app-shell {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body data-scene="card-issuance">
+    <div class="app-shell">
+      <!-- ========== HEADER BAR ========== -->
+      <header class="header">
+        <div class="logo-placeholder">YOUR LOGO</div>
+        <h1 class="header-title">Stablecoin Card Demo</h1>
+        <div class="header-right">
+          <div class="flow-legend" aria-label="Flow diagram legend">
+            <div class="legend-item">
+              <span class="legend-line solid-green"></span>
+              Send
+            </div>
+            <div class="legend-item">
+              <span class="legend-line dashed-green"></span>
+              Return
+            </div>
+            <div class="legend-item">
+              <span class="legend-line solid-red"></span>
+              Fund
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot"></span>
+              Active
+            </div>
+          </div>
+          <div class="scene-btn-group">
+            <button type="button" class="scene-btn active" data-scene="card-issuance" aria-pressed="true">
+              <div class="icon-box">
+                <img src="icons/card-issuance.png" alt="" onerror="this.style.display='none'" />
+              </div>
+              <span class="scene-label">Card Issuance</span>
+            </button>
+            <button type="button" class="scene-btn" data-scene="onramp" aria-pressed="false">
+              <div class="icon-box">
+                <img src="icons/deposit.png" alt="" onerror="this.style.display='none'" />
+              </div>
+              <span class="scene-label">Fiat Onramp</span>
+            </button>
+            <button type="button" class="scene-btn" data-scene="transaction" aria-pressed="false">
+              <div class="icon-box">
+                <img src="icons/transaction.png" alt="" onerror="this.style.display='none'" />
+              </div>
+              <span class="scene-label">Transaction</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- ========== SELECTED SCENE + CONTROL BUTTONS ========== -->
+      <div class="sub-header">
+        <p class="selected-scene">Selected Scene: <span id="selectedSceneLabel">Card Issuance</span></p>
+        <div class="controls">
+          <button type="button" class="ctrl-btn" id="btnStart">▶ Start</button>
+          <button type="button" class="ctrl-btn" id="btnPause" disabled>⏸ Pause</button>
+          <button type="button" class="ctrl-btn" id="btnReset">↺ Reset</button>
+        </div>
+        <p class="step-indicator" id="stepIndicator">Step 0 — Tap Apply Card in Customer View</p>
+      </div>
+
+      <!-- ========== MAIN THREE COLUMNS ========== -->
+      <!-- Order: Customer (left) | System Flow (center) | Merchant (right) -->
+      <main class="main" id="mainDiagram">
+        <!-- ========== LEFT COLUMN: CUSTOMER APP ========== -->
+        <section class="column" id="col-mobile">
+          <div class="col-header">Customer View</div>
+          <div class="col-body mobile-col">
+            <div class="phone-shell">
+              <div class="phone-notch" aria-hidden="true"></div>
+              <div class="phone-screen" id="phoneScreen">
+                <div class="app-topbar">
+                  <span class="back">← Back</span>
+                  <span class="title">Demo Bank</span>
+                  <span class="spacer"></span>
+                </div>
+
+                <p class="greeting">Good morning, John 👋</p>
+
+                <!-- Card Issuance scene -->
+                <div class="app-panel visible" id="appPanelIssuance" data-panel="card-issuance">
+                  <div class="card-empty" id="cardEmpty">No card issued yet</div>
+                  <div class="card-graphic hidden" id="cardSuccess">
+                    <!-- Set src to your bank logo path, e.g. assets/bank-logo.png -->
+                    <img
+                      class="card-bank-logo"
+                      id="cardBankLogo"
+                      src=""
+                      alt="Bank logo"
+                      data-logo-path="assets/bank-logo.png"
+                    />
+                    <span class="card-bank-fallback" id="cardBankFallback">DEMO BANK</span>
+                    <span class="card-badge">CRYPTO-LINKED</span>
+                    <span class="card-pan" id="cardPan">**** **** **** ----</span>
+                    <span class="card-visa">VISA</span>
+                  </div>
+                  <p class="wallet-id-line" id="walletIdLine"></p>
+                  <button type="button" class="pay-btn" id="btnApplyCard">Apply Card</button>
+                  <p class="issuance-status" id="issuanceStatus"></p>
+                </div>
+
+                <!-- Transaction scene -->
+                <div class="app-panel" id="appPanelTransaction" data-panel="transaction">
+                  <div class="balance-section">
+                    <div class="label">Crypto Balance</div>
+                    <div class="amount" id="txnBalanceAmt">500.00 USDT</div>
+                    <div class="equiv" id="txnBalanceEquiv">≈ SGD 495.00</div>
+                  </div>
+                  <div class="qr-box" id="txnQrBox">
+                    <div class="qr-pattern" aria-hidden="true"></div>
+                    <span class="qr-placeholder-text">Tap Generate QR Code</span>
+                  </div>
+                  <div class="pay-pref">
+                    <div class="label">Payment preference (drag order):</div>
+                    <div class="pref-list" id="txnPayPrefList"></div>
+                  </div>
+                  <button type="button" class="pay-btn" id="btnGenQr">Generate QR Code</button>
+                  <p class="txn-status" id="txnStatus"></p>
+                  <div class="qr-modal-overlay" id="qrModalOverlay" aria-hidden="true">
+                    <div class="qr-modal" role="dialog" aria-labelledby="qrModalTitle">
+                      <div class="qr-modal-header">
+                        <span id="qrModalTitle">Scan to Pay</span>
+                        <button type="button" class="qr-modal-close" id="qrModalClose" aria-label="Close">
+                          ×
+                        </button>
+                      </div>
+                      <div class="qr-modal-body">
+                        <div class="qr-modal-canvas-wrap">
+                          <div id="txnQrHost" aria-label="PayNow QR code"></div>
+                        </div>
+                        <div class="qr-modal-amount" id="qrModalAmount">SGD 100.00</div>
+                        <div class="qr-modal-meta" id="qrModalMeta">Demo Merchant · ORD-001</div>
+                        <div class="qr-modal-paynow">
+                          <img
+                            class="fiat-flag fiat-flag-sm"
+                            src="assets/flags/sg.png"
+                            alt="SG"
+                            data-flag-fiat="SGD"
+                          />
+                          PayNow · EMVCo SGQR
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Fiat Onramp scene -->
+                <div class="app-panel" id="appPanelOnramp" data-panel="onramp">
+                  <div class="balance-chips" id="onrampBalanceChips">
+                    <span class="bal-chip" id="chipUsd"
+                      ><span class="fiat-flag-wrap"
+                        ><img
+                          class="fiat-flag"
+                          src="assets/flags/us.png"
+                          alt="US"
+                          data-flag-fiat="USD"
+                        />USD 10,000</span
+                      ></span
+                    >
+                    <span class="bal-chip" id="chipSgd"
+                      ><span class="fiat-flag-wrap"
+                        ><img
+                          class="fiat-flag"
+                          src="assets/flags/sg.png"
+                          alt="SG"
+                          data-flag-fiat="SGD"
+                        />SGD 10,000</span
+                      ></span
+                    >
+                  </div>
+                  <h2 class="buy-title" id="onrampBuyTitle">Buy USDT</h2>
+                  <div class="exchange-box">
+                    <div class="box-label">Receive</div>
+                    <div class="exchange-row">
+                      <div class="coin-select">
+                        <img
+                          class="fiat-flag"
+                          id="recvCoinIcon"
+                          src="assets/flags/usdt.png"
+                          alt="USDT"
+                          data-flag-fiat="USDT"
+                        />
+                        <select id="recvCoin">
+                          <option value="USDT">USDT</option>
+                          <option value="USDC">USDC</option>
+                        </select>
+                      </div>
+                      <input
+                        class="exchange-input"
+                        id="recvAmount"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value=""
+                        placeholder="0"
+                        inputmode="decimal"
+                      />
+                    </div>
+                  </div>
+                  <div class="exchange-box">
+                    <div class="box-label">Pay</div>
+                    <div class="exchange-row">
+                      <div class="coin-select">
+                        <img
+                          class="fiat-flag"
+                          id="payFiatFlag"
+                          src="assets/flags/us.png"
+                          alt="US"
+                          data-flag-fiat="USD"
+                        />
+                        <select id="payFiat">
+                          <option value="USD">USD</option>
+                          <option value="SGD">SGD</option>
+                        </select>
+                      </div>
+                      <span class="exchange-amount-readonly empty" id="payAmount">—</span>
+                    </div>
+                    <p class="onramp-rate-hint" id="onrampRateHint">1 USDT = 1.00 USD</p>
+                  </div>
+                  <div class="onramp-fees">
+                    <div class="row">
+                      <span>Fee</span>
+                      <span id="onrampFeeAmt">—</span>
+                    </div>
+                    <div class="row total">
+                      <span>Total</span>
+                      <span id="onrampTotalAmt">—</span>
+                    </div>
+                  </div>
+                  <button type="button" class="pay-btn" id="btnTopUp">Top Up</button>
+                  <p class="onramp-status" id="onrampStatus"></p>
+                  <div class="qr-modal-overlay" id="onrampSuccessOverlay" aria-hidden="true">
+                    <div class="qr-modal" role="dialog" aria-labelledby="onrampSuccessTitle">
+                      <div class="qr-modal-header">
+                        <span id="onrampSuccessTitle">Top Up Successful</span>
+                        <button
+                          type="button"
+                          class="qr-modal-close"
+                          id="onrampSuccessClose"
+                          aria-label="Close"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <div class="qr-modal-body">
+                        <div class="onramp-success-icon" aria-hidden="true">✓</div>
+                        <div class="qr-modal-amount" id="onrampSuccessAmount">+100 USDT</div>
+                        <div class="qr-modal-meta" id="onrampSuccessMeta">Added to your wallet</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== MIDDLE COLUMN: VERTICAL FLOW DIAGRAM ========== -->
+        <section class="column" id="col-flow">
+          <div class="col-header">System Flow</div>
+          <div class="col-body">
+            <div class="flow-wrap" id="flowWrap">
+              <div class="lanes-row" id="lanes">
+                <div class="issuance-matrix" id="issuanceMatrix">
+                  <div class="matrix-header-row">
+                    <div class="matrix-header" data-lane="issuing">Issuing System</div>
+                    <div class="matrix-header wl-header" data-lane="wl">
+                      WL Crypto System
+                      <span class="wl-badge">(Our Product)</span>
+                    </div>
+                    <div class="matrix-header" data-lane="waas">WAAS Provider</div>
+                  </div>
+                  <div class="matrix-node-row matrix-node-row-top">
+                    <div class="matrix-cell" data-lane="issuing">
+                      <div class="process-node" id="node-eligible" data-node="eligible">
+                        Eligibility<br />Verification
+                      </div>
+                    </div>
+                    <div class="matrix-cell" data-lane="wl">
+                      <div class="process-node" id="node-request-waas" data-node="request-waas">
+                        Connect WAAS<br />Open Account
+                      </div>
+                    </div>
+                    <div class="matrix-cell" data-lane="waas">
+                      <div class="process-node" id="node-open-account" data-node="open-account">
+                        Open Account
+                      </div>
+                    </div>
+                  </div>
+                  <div class="matrix-node-row matrix-node-row-bottom">
+                    <div class="matrix-cell" data-lane="issuing">
+                      <div class="process-node" id="node-generate-card" data-node="generate-card">
+                        Generate Card<br />&amp; Link Wallet
+                      </div>
+                    </div>
+                    <div class="matrix-cell" data-lane="wl">
+                      <div class="process-node" id="node-record-wallet" data-node="record-wallet">
+                        Record Wallet ID<br />&amp; Notify Issuer
+                      </div>
+                    </div>
+                    <div class="matrix-cell" data-lane="waas">
+                      <div class="process-node" id="node-return-wallet" data-node="return-wallet">
+                        Return<br />Wallet ID
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="onramp-matrix" id="onrampMatrix">
+                  <div class="matrix-header-row matrix-cols-4">
+                    <div class="matrix-header wl-header">
+                      WL Crypto System
+                      <span class="wl-badge">(Our Product)</span>
+                    </div>
+                    <div class="matrix-header">Issuing System</div>
+                    <div class="matrix-header">Liquidity Provider</div>
+                    <div class="matrix-header">WAAS Provider</div>
+                  </div>
+                  <div class="matrix-node-row matrix-row-layer1 matrix-cols-4">
+                    <div class="matrix-cell">
+                      <div class="process-node" id="node-onramp-wl-fx">Query FX<br />Rate</div>
+                    </div>
+                    <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    <div class="matrix-cell">
+                      <div class="process-node" id="node-onramp-lp-fx">Provide FX<br />Rate</div>
+                    </div>
+                    <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                  </div>
+                  <div class="onramp-l2-stagger">
+                    <div class="matrix-cell wl-conv-cell">
+                      <div class="process-node" id="node-onramp-wl-conv">Request<br />Conversion</div>
+                    </div>
+                    <div class="matrix-cell debit-cell">
+                      <div class="process-node" id="node-onramp-debit">Send Debit<br />Request</div>
+                    </div>
+                    <div class="matrix-cell exec-cell">
+                      <div class="process-node" id="node-onramp-lp-exec">Execute<br />Conversion</div>
+                    </div>
+                    <div class="matrix-cell waas-cell">
+                      <div class="process-node" id="node-onramp-waas-rcv">Credit On-chain<br />Wallet</div>
+                    </div>
+                  </div>
+                  <div class="matrix-node-row matrix-row-layer2b matrix-cols-4">
+                    <div class="matrix-cell">
+                      <div class="process-node" id="node-onramp-wl-notify">Notify<br />Customer</div>
+                    </div>
+                    <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                  </div>
+                  <div class="matrix-row-gap" aria-hidden="true"></div>
+                  <div class="matrix-node-row matrix-row-layer3 matrix-cols-4">
+                    <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    <div class="matrix-cell">
+                      <div class="account-wrap" id="acct-issuer-settlement">
+                        <div class="cylinder">
+                          <div class="cylinder-top"></div>
+                          <div class="cylinder-body"></div>
+                          <div class="cylinder-bottom"></div>
+                        </div>
+                        <div class="account-label">Issuer Settlement</div>
+                        <div class="account-value" id="valIssuerSettlement">USD 10,000</div>
+                      </div>
+                    </div>
+                    <div class="matrix-cell">
+                      <div class="account-wrap" id="acct-lp-fiat">
+                        <div class="cylinder">
+                          <div class="cylinder-top"></div>
+                          <div class="cylinder-body"></div>
+                          <div class="cylinder-bottom"></div>
+                        </div>
+                        <div class="account-label">LP Fiat Account</div>
+                        <div class="account-value" id="valLpFiat">USD 0</div>
+                      </div>
+                    </div>
+                    <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                  </div>
+                  <div class="matrix-node-row matrix-row-layer3b matrix-cols-4">
+                    <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    <div class="matrix-cell">
+                      <div class="account-wrap" id="acct-lp-stable">
+                        <div class="cylinder">
+                          <div class="cylinder-top"></div>
+                          <div class="cylinder-body"></div>
+                          <div class="cylinder-bottom"></div>
+                        </div>
+                        <div class="account-label">LP Stablecoin</div>
+                        <div class="account-value" id="valLpStable">0 USDT</div>
+                      </div>
+                    </div>
+                    <div class="matrix-cell">
+                      <div class="account-wrap" id="acct-waas-onchain">
+                        <div class="cylinder">
+                          <div class="cylinder-top"></div>
+                          <div class="cylinder-body"></div>
+                          <div class="cylinder-bottom"></div>
+                        </div>
+                        <div class="account-label">On-chain Wallet</div>
+                        <div class="account-value" id="valWaasOnchain">0 USDT</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="txn-v-flow" id="txnVFlow">
+                  <div class="txn-panel-legend" aria-label="Flow legend">
+                    <div class="leg-row"><span class="leg-info-solid"></span> Send</div>
+                    <div class="leg-row"><span class="leg-info-dash"></span> Return</div>
+                    <div class="leg-row"><span class="leg-fund"></span> Fund</div>
+                  </div>
+                  <svg class="txn-svg" id="txnSvg" aria-hidden="true"></svg>
+                  <div class="txn-app-anchor" id="txnAppAnchor" aria-hidden="true"></div>
+                  <div class="txn-mch-fund-anchor" id="txnMchFundAnchor" aria-hidden="true"></div>
+                  <div class="txn-matrix" id="txnMatrix">
+                    <div class="matrix-header-row matrix-cols-6">
+                      <div class="matrix-header">Issuing System</div>
+                      <div class="matrix-header wl-header">
+                        WL Crypto System
+                        <span class="wl-badge">(Our Product)</span>
+                      </div>
+                      <div class="matrix-header">Liquidity Provider</div>
+                      <div class="matrix-header">WAAS Provider</div>
+                      <div class="matrix-header">Scheme</div>
+                      <div class="matrix-header">Acquirer</div>
+                    </div>
+                    <div class="matrix-node-row matrix-txn-l1 matrix-cols-6">
+                      <div class="matrix-cell" data-lane="issuing">
+                        <div class="process-node inactive" id="txn-node-iss-req">—</div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="scheme">
+                        <div class="process-node inactive" id="txn-node-scheme">—</div>
+                      </div>
+                      <div class="matrix-cell" data-lane="acquirer">
+                        <div class="process-node inactive" id="txn-node-acq">—</div>
+                      </div>
+                    </div>
+                    <div class="matrix-node-row matrix-txn-l2 matrix-cols-6">
+                      <div class="matrix-cell" data-lane="issuing">
+                        <div class="process-node inactive" id="txn-node-iss-auth">—</div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    </div>
+                    <div class="matrix-node-row matrix-txn-l3 matrix-cols-6">
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="wl">
+                        <div class="process-node inactive" id="txn-node-wl-fx">—</div>
+                      </div>
+                      <div class="matrix-cell" data-lane="lp">
+                        <div class="process-node inactive" id="txn-node-lp-fx">—</div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    </div>
+                    <div class="matrix-node-row matrix-txn-l4 matrix-cols-6">
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="wl">
+                        <div class="process-node inactive" id="txn-node-wl-transfer">—</div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="waas">
+                        <div class="process-node inactive" id="txn-node-waas-fraud">—</div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    </div>
+                    <div class="matrix-node-row matrix-txn-l5 matrix-cols-6">
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="wl">
+                        <div class="process-node inactive" id="txn-node-wl-ramp">—</div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="waas">
+                        <div class="process-node inactive" id="txn-node-waas-make">—</div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    </div>
+                    <div class="matrix-node-row matrix-txn-l6 matrix-cols-6">
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="wl">
+                        <div class="process-node inactive" id="txn-node-wl-rcv-ramp">—</div>
+                      </div>
+                      <div class="matrix-cell" data-lane="lp">
+                        <div class="process-node inactive" id="txn-node-lp-conv">—</div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    </div>
+                    <div class="matrix-node-row matrix-txn-l7 matrix-cols-6">
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="wl">
+                        <div class="process-node inactive" id="txn-node-wl-conv-rcv">—</div>
+                      </div>
+                      <div class="matrix-cell" data-lane="lp">
+                        <div class="process-node inactive" id="txn-node-lp-conv-done">—</div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    </div>
+                    <div class="matrix-node-row matrix-txn-l8 matrix-cols-6">
+                      <div class="matrix-cell" data-lane="issuing">
+                        <div class="process-node inactive" id="txn-node-iss-ok">—</div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="scheme">
+                        <div class="process-node inactive" id="txn-node-scheme-ok">—</div>
+                      </div>
+                      <div class="matrix-cell" data-lane="acquirer">
+                        <div class="process-node inactive" id="txn-node-acq-settle">—</div>
+                      </div>
+                    </div>
+                    <div class="matrix-row-gap" aria-hidden="true"></div>
+                    <div class="matrix-node-row matrix-txn-fund-l1 matrix-cols-6">
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty lane-wl-cell" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="lp">
+                        <div class="account-wrap" id="acct-txn-lp-acct">
+                          <div class="cylinder">
+                            <div class="cylinder-top"></div>
+                            <div class="cylinder-body"></div>
+                            <div class="cylinder-bottom"></div>
+                          </div>
+                          <div class="account-label">LP USDT</div>
+                          <div class="account-value" id="valTxnLpAcct">1000 USDT</div>
+                          <div class="account-delta" id="deltaTxnLpAcct"></div>
+                        </div>
+                      </div>
+                      <div class="matrix-cell" data-lane="waas">
+                        <div class="account-wrap" id="acct-txn-waas-acct">
+                          <div class="cylinder">
+                            <div class="cylinder-top"></div>
+                            <div class="cylinder-body"></div>
+                            <div class="cylinder-bottom"></div>
+                          </div>
+                          <div class="account-label">WAAS USDT</div>
+                          <div class="account-value" id="valTxnWaasAcct">500 USDT</div>
+                          <div class="account-delta" id="deltaTxnWaasAcct"></div>
+                        </div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    </div>
+                    <div class="matrix-node-row matrix-txn-fund-l2 matrix-cols-6">
+                      <div class="matrix-cell" data-lane="issuing">
+                        <div class="account-wrap" id="acct-txn-issuer">
+                          <div class="cylinder">
+                            <div class="cylinder-top"></div>
+                            <div class="cylinder-body"></div>
+                            <div class="cylinder-bottom"></div>
+                          </div>
+                          <div class="account-label">Issuer Settlement</div>
+                          <div class="account-value" id="valTxnIssuer">$0.00 SGD</div>
+                          <div class="account-delta" id="deltaTxnIssuer"></div>
+                        </div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty lane-wl-cell" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="lp">
+                        <div class="account-wrap" id="acct-txn-lp-fiat">
+                          <div class="cylinder">
+                            <div class="cylinder-top"></div>
+                            <div class="cylinder-body"></div>
+                            <div class="cylinder-bottom"></div>
+                          </div>
+                          <div class="account-label">LP Fiat</div>
+                          <div class="account-value" id="valTxnLpFiat">$0.00 SGD</div>
+                          <div class="account-delta" id="deltaTxnLpFiat"></div>
+                        </div>
+                      </div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                    </div>
+                    <div class="matrix-node-row matrix-txn-fund-l3 matrix-cols-6">
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell matrix-cell-empty" aria-hidden="true"></div>
+                      <div class="matrix-cell" data-lane="acquirer">
+                        <div class="account-wrap" id="acct-txn-acq-acct">
+                          <div class="cylinder">
+                            <div class="cylinder-top"></div>
+                            <div class="cylinder-body"></div>
+                            <div class="cylinder-bottom"></div>
+                          </div>
+                          <div class="account-label">Acquirer Settlement</div>
+                          <div class="account-value" id="valTxnAcqAcct">$0.00 SGD</div>
+                          <div class="account-delta" id="deltaTxnAcqAcct"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="txn-success-banner" id="txnSuccessBanner">
+                    ✅ Transaction Complete | $100 SGD paid | 101 USDT deducted | 3.2s
+                  </div>
+                </div>
+
+                <div class="lanes-extra">
+                <!-- Col 4: Liquidity Provider -->
+                <div class="swim-col" data-lane="liquidity">
+                  <div class="swim-col-header">Liquidity Provider</div>
+                  <div class="swim-col-body">
+                    <div class="flow-grid">
+                      <div class="flow-row flow-row-top">
+                        <div class="process-node">[ Placeholder ]</div>
+                      </div>
+                      <div class="flow-row flow-row-bottom">
+                        <span class="v-connector-label">info flow</span>
+                      </div>
+                    </div>
+                    <div class="account-wrap lane-account">
+                      <div class="cylinder">
+                        <div class="cylinder-top"></div>
+                        <div class="cylinder-body"></div>
+                        <div class="cylinder-bottom"></div>
+                      </div>
+                      <div class="account-label">LP Account</div>
+                      <div class="account-value">USDT 0.00</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Col 5: Scheme -->
+                <div class="swim-col" data-lane="scheme">
+                  <div class="swim-col-header">Scheme (Card Network)</div>
+                  <div class="swim-col-body">
+                    <div class="flow-grid">
+                      <div class="flow-row flow-row-top">
+                        <div class="process-node">[ Placeholder ]</div>
+                      </div>
+                      <div class="flow-row flow-row-bottom">
+                        <span class="v-connector-label">info flow</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Col 6: Acquirer -->
+                <div class="swim-col" data-lane="acquirer">
+                  <div class="swim-col-header">Acquirer</div>
+                  <div class="swim-col-body">
+                    <div class="flow-grid">
+                      <div class="flow-row flow-row-top">
+                        <div class="process-node">[ Placeholder ]</div>
+                      </div>
+                      <div class="flow-row flow-row-bottom">
+                        <span class="v-connector-label">fund flow</span>
+                      </div>
+                    </div>
+                    <div class="account-wrap lane-account">
+                      <div class="cylinder">
+                        <div class="cylinder-top"></div>
+                        <div class="cylinder-body"></div>
+                        <div class="cylinder-bottom"></div>
+                      </div>
+                      <div class="account-label">Acquirer Settlement</div>
+                      <div class="account-value">EUR 0.00</div>
+                    </div>
+                  </div>
+                </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== RIGHT COLUMN: MERCHANT DASHBOARD ========== -->
+        <section class="column" id="col-merchant">
+          <div class="col-header">Merchant View</div>
+          <div class="col-body" style="position: relative">
+            <div class="merchant-pay-anchor" id="merchantPayAnchor" aria-hidden="true"></div>
+            <div class="browser-frame">
+              <div class="browser-bar">
+                <div class="url-bar">merchant.demobank.com</div>
+              </div>
+              <div class="browser-content">
+                <!-- Stat cards -->
+                <div class="stat-cards">
+                  <div class="stat-card">
+                    <div class="label">Today's Revenue</div>
+                    <div class="value" id="mchRevenue">$0.00 SGD</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="label">Transactions</div>
+                    <div class="value" id="mchTxnCount">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="label">Success Rate</div>
+                    <div class="value" id="mchSuccessRate">--</div>
+                  </div>
+                </div>
+
+                <!-- Orders table -->
+                <div class="orders-table-wrap">
+                  <table class="orders-table">
+                    <thead>
+                      <tr>
+                        <th>Order ID</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Customer</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr id="mchOrderRow">
+                        <td>#ORD-001</td>
+                        <td>$100.00 SGD</td>
+                        <td id="mchOrderStatus">🟡 Pending</td>
+                        <td>John S.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Settlement balance -->
+                <div class="settlement-box" id="mchSettlementBox">
+                  <div class="label">Settlement Account (Acquirer)</div>
+                  <div class="value" id="mchSettlement">$0.00 SGD</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <svg class="diagram-arrows" id="arrowSvg" aria-hidden="true"></svg>
+      </main>
+    </div>
+
+    <script src="assets/js/qrcode.min.js"></script>
+    <script>
+      (function () {
+        var SCENE_LABELS = {
+          'card-issuance': 'Card Issuance',
+          onramp: 'Fiat Onramp',
+          transaction: 'Transaction',
+        };
+
+        var STEP_IDLE = {
+          'card-issuance': 'Step 0 — Tap Apply Card in Customer View',
+          onramp: 'Step 0 — Enter receive amount, then Top Up',
+          transaction: 'Step 0 — Press ▶ Start to run transaction flow',
+        };
+
+        var ONRAMP_RATES = {
+          USD: { USDT: 1.0, USDC: 1.0 },
+          SGD: { USDT: 1.35, USDC: 1.35 },
+        };
+
+        var ONRAMP_FEE_RATE = 0.003;
+        var ONRAMP_FEE_MIN = { USD: 1.5, SGD: 2.0 };
+
+        var onrampBalances = { USD: 10000, SGD: 10000, USDT: 0, USDC: 0 };
+        var onrampQuote = { pay: 0, fee: 0, total: 0, recv: 0, coin: 'USDT', fiat: 'USD' };
+        var rateFlashTimer = null;
+        var onrampRateLit = false;
+
+        var ISSUANCE_EDGES = [
+          {
+            id: 'edge-eligible-request',
+            from: 'node-eligible',
+            fromSide: 'right',
+            to: 'node-request-waas',
+            toSide: 'left',
+            kind: 'forward',
+            straight: true,
+            lane: 0,
+          },
+          {
+            id: 'edge-request-open',
+            from: 'node-request-waas',
+            fromSide: 'right',
+            to: 'node-open-account',
+            toSide: 'left',
+            kind: 'forward',
+            straight: true,
+            lane: 0,
+          },
+          {
+            id: 'edge-open-return',
+            from: 'node-open-account',
+            fromSide: 'bottom',
+            to: 'node-return-wallet',
+            toSide: 'top',
+            kind: 'forward',
+            straight: true,
+            lane: 0,
+          },
+          {
+            id: 'edge-return-record',
+            from: 'node-return-wallet',
+            fromSide: 'left',
+            to: 'node-record-wallet',
+            toSide: 'right',
+            kind: 'return',
+            straight: true,
+            lane: 0,
+          },
+          {
+            id: 'edge-record-generate',
+            from: 'node-record-wallet',
+            fromSide: 'left',
+            to: 'node-generate-card',
+            toSide: 'right',
+            kind: 'return',
+            straight: true,
+            lane: 0,
+          },
+          {
+            id: 'edge-generate-app',
+            from: 'node-generate-card',
+            fromSide: 'left',
+            kind: 'forward',
+            route: 'to-app-line',
+            extendLeft: 110,
+          },
+        ];
+
+        var ISSUANCE_STEPS = [
+          {
+            label: 'Customer taps Apply Card',
+            nodes: [],
+            edges: [],
+            app: { status: 'Requesting card…', running: true },
+            delay: 900,
+          },
+          {
+            label: 'Issuing System — Eligibility Verification',
+            nodes: ['node-eligible'],
+            edges: [],
+            delay: 1100,
+          },
+          {
+            label: 'Eligible — route to WL Crypto System',
+            nodes: ['node-eligible'],
+            edges: ['edge-eligible-request'],
+            delay: 1000,
+          },
+          {
+            label: 'WL Crypto connects WAAS — Open Account',
+            nodes: ['node-request-waas'],
+            edges: ['edge-eligible-request'],
+            markDone: ['node-eligible'],
+            delay: 1100,
+          },
+          {
+            label: 'WL → WAAS Provider',
+            nodes: ['node-request-waas'],
+            edges: ['edge-eligible-request', 'edge-request-open'],
+            delay: 1000,
+          },
+          {
+            label: 'WAAS — Open Account',
+            nodes: ['node-open-account'],
+            edges: ['edge-eligible-request', 'edge-request-open'],
+            markDone: ['node-request-waas'],
+            delay: 1100,
+          },
+          {
+            label: 'WAAS returns Wallet ID',
+            nodes: ['node-return-wallet'],
+            edges: ['edge-eligible-request', 'edge-request-open', 'edge-open-return'],
+            markDone: ['node-open-account'],
+            delay: 1000,
+          },
+          {
+            label: 'Wallet ID → WL Crypto (return path)',
+            nodes: ['node-return-wallet'],
+            edges: [
+              'edge-eligible-request',
+              'edge-request-open',
+              'edge-open-return',
+              'edge-return-record',
+            ],
+            markDone: ['node-return-wallet'],
+            delay: 1100,
+          },
+          {
+            label: 'WL Crypto records Wallet ID',
+            nodes: ['node-record-wallet'],
+            edges: [
+              'edge-eligible-request',
+              'edge-request-open',
+              'edge-open-return',
+              'edge-return-record',
+            ],
+            walletId: true,
+            delay: 1100,
+          },
+          {
+            label: 'Wallet ID → Issuing System (return path)',
+            nodes: ['node-record-wallet'],
+            edges: [
+              'edge-eligible-request',
+              'edge-request-open',
+              'edge-open-return',
+              'edge-return-record',
+              'edge-record-generate',
+            ],
+            delay: 1000,
+          },
+          {
+            label: 'Issuing — Generate Card & link Wallet',
+            nodes: ['node-generate-card'],
+            edges: [
+              'edge-eligible-request',
+              'edge-request-open',
+              'edge-open-return',
+              'edge-return-record',
+              'edge-record-generate',
+            ],
+            markDone: ['node-record-wallet'],
+            delay: 1200,
+          },
+          {
+            label: 'Deliver card to Customer APP',
+            nodes: ['node-generate-card'],
+            edges: [
+              'edge-eligible-request',
+              'edge-request-open',
+              'edge-open-return',
+              'edge-return-record',
+              'edge-record-generate',
+              'edge-generate-app',
+            ],
+            markDone: ['node-generate-card'],
+            delay: 1100,
+          },
+          {
+            label: 'Card issued — display in Customer APP',
+            nodes: [],
+            edges: [
+              'edge-eligible-request',
+              'edge-request-open',
+              'edge-open-return',
+              'edge-return-record',
+              'edge-record-generate',
+              'edge-generate-app',
+            ],
+            app: { success: true },
+            delay: 0,
+          },
+        ];
+
+        var ONRAMP_EDGES = [
+          {
+            id: 'edge-onramp-app-wl',
+            to: 'node-onramp-wl-fx',
+            toSide: 'left',
+            kind: 'forward',
+            route: 'from-app-line',
+            extendLeft: 110,
+          },
+          {
+            id: 'edge-onramp-rate',
+            from: 'node-onramp-wl-fx',
+            fromSide: 'right',
+            to: 'node-onramp-lp-fx',
+            toSide: 'left',
+            kind: 'forward',
+            straight: true,
+          },
+          {
+            id: 'edge-onramp-rate-ret',
+            from: 'node-onramp-lp-fx',
+            fromSide: 'left',
+            to: 'node-onramp-wl-fx',
+            toSide: 'right',
+            kind: 'return',
+            straight: true,
+          },
+          {
+            id: 'edge-onramp-wl-debit',
+            from: 'node-onramp-wl-conv',
+            fromSide: 'right',
+            to: 'node-onramp-debit',
+            toSide: 'left',
+            kind: 'forward',
+            route: 'elbow-vh',
+          },
+          {
+            id: 'edge-onramp-fund',
+            from: 'acct-issuer-settlement',
+            fromSide: 'right',
+            to: 'acct-lp-fiat',
+            toSide: 'left',
+            kind: 'fund',
+            route: 'fund-straight',
+          },
+          {
+            id: 'edge-onramp-wl-lp',
+            from: 'node-onramp-wl-conv',
+            fromSide: 'right',
+            to: 'node-onramp-lp-exec',
+            toSide: 'left',
+            kind: 'forward',
+            straight: true,
+            lane: 0,
+          },
+          {
+            id: 'edge-onramp-lp-waas-info',
+            from: 'node-onramp-lp-exec',
+            fromSide: 'right',
+            to: 'node-onramp-waas-rcv',
+            toSide: 'left',
+            kind: 'forward',
+            straight: true,
+            lane: 0,
+          },
+          {
+            id: 'edge-onramp-stable-waas',
+            from: 'acct-lp-stable',
+            fromSide: 'right',
+            to: 'acct-waas-onchain',
+            toSide: 'left',
+            kind: 'fund',
+            route: 'fund-straight',
+          },
+          {
+            id: 'edge-onramp-lp-notify',
+            from: 'node-onramp-lp-exec',
+            fromSide: 'bottom',
+            to: 'node-onramp-wl-notify',
+            toSide: 'right',
+            kind: 'return',
+            route: 'notify-l',
+          },
+          {
+            id: 'edge-onramp-waas-notify',
+            from: 'node-onramp-waas-rcv',
+            fromSide: 'bottom',
+            to: 'node-onramp-wl-notify',
+            toSide: 'right',
+            kind: 'return',
+            route: 'notify-l',
+          },
+          {
+            id: 'edge-onramp-wl-app',
+            from: 'node-onramp-wl-notify',
+            fromSide: 'left',
+            kind: 'return',
+            route: 'to-app-line',
+            extendLeft: 110,
+          },
+        ];
+
+        var ONRAMP_STEPS = [
+          {
+            label: 'Customer taps Top Up',
+            nodes: [],
+            edges: [],
+            onramp: { status: 'Processing top-up…', running: true },
+            delay: 900,
+          },
+          {
+            label: 'WL Crypto — Request Conversion (orchestrate)',
+            nodes: ['node-onramp-wl-conv'],
+            edges: ['edge-onramp-app-wl', 'edge-onramp-rate', 'edge-onramp-rate-ret'],
+            delay: 1000,
+          },
+          {
+            label: 'WL → Issuing — Send Debit Request',
+            nodes: ['node-onramp-debit'],
+            edges: [
+              'edge-onramp-app-wl',
+              'edge-onramp-rate',
+              'edge-onramp-rate-ret',
+              'edge-onramp-wl-debit',
+            ],
+            delay: 1000,
+          },
+          {
+            label: 'Fund — Issuer Settlement → LP Fiat Account',
+            nodes: ['node-onramp-debit'],
+            edges: [
+              'edge-onramp-app-wl',
+              'edge-onramp-rate',
+              'edge-onramp-rate-ret',
+              'edge-onramp-wl-debit',
+              'edge-onramp-fund',
+            ],
+            onramp: { moveFunds: true },
+            markDone: ['node-onramp-debit'],
+            delay: 1100,
+          },
+          {
+            label: 'WL → LP — Conversion Instruction',
+            nodes: ['node-onramp-lp-exec'],
+            edges: [
+              'edge-onramp-app-wl',
+              'edge-onramp-rate',
+              'edge-onramp-rate-ret',
+              'edge-onramp-wl-debit',
+              'edge-onramp-fund',
+              'edge-onramp-wl-lp',
+            ],
+            delay: 1000,
+          },
+          {
+            label: 'LP — Execute Conversion',
+            nodes: ['node-onramp-lp-exec'],
+            edges: [
+              'edge-onramp-app-wl',
+              'edge-onramp-rate',
+              'edge-onramp-rate-ret',
+              'edge-onramp-wl-debit',
+              'edge-onramp-fund',
+              'edge-onramp-wl-lp',
+            ],
+            delay: 1100,
+          },
+          {
+            label: 'LP Stablecoin → WAAS On-chain Wallet',
+            nodes: ['node-onramp-waas-rcv'],
+            edges: [
+              'edge-onramp-app-wl',
+              'edge-onramp-rate',
+              'edge-onramp-rate-ret',
+              'edge-onramp-wl-debit',
+              'edge-onramp-fund',
+              'edge-onramp-wl-lp',
+              'edge-onramp-lp-waas-info',
+              'edge-onramp-stable-waas',
+            ],
+            onramp: { creditWaas: true },
+            markDone: ['node-onramp-lp-exec'],
+            delay: 1100,
+          },
+          {
+            label: 'LP & WAAS → WL — Notify completion',
+            nodes: ['node-onramp-wl-notify'],
+            edges: [
+              'edge-onramp-app-wl',
+              'edge-onramp-rate',
+              'edge-onramp-rate-ret',
+              'edge-onramp-wl-debit',
+              'edge-onramp-fund',
+              'edge-onramp-wl-lp',
+              'edge-onramp-lp-waas-info',
+              'edge-onramp-stable-waas',
+              'edge-onramp-lp-notify',
+              'edge-onramp-waas-notify',
+            ],
+            markDone: ['node-onramp-waas-rcv', 'node-onramp-lp-exec'],
+            delay: 1000,
+          },
+          {
+            label: 'WL → APP — Update balance',
+            nodes: ['node-onramp-wl-notify'],
+            edges: [
+              'edge-onramp-app-wl',
+              'edge-onramp-rate',
+              'edge-onramp-rate-ret',
+              'edge-onramp-wl-debit',
+              'edge-onramp-fund',
+              'edge-onramp-wl-lp',
+              'edge-onramp-lp-waas-info',
+              'edge-onramp-stable-waas',
+              'edge-onramp-lp-notify',
+              'edge-onramp-waas-notify',
+              'edge-onramp-wl-app',
+            ],
+            onramp: { success: true },
+            delay: 0,
+          },
+        ];
+
+        var TXN_FIAT = 'SGD';
+        var TXN_FIAT_AMOUNT = 100;
+        var TXN_USDT_AMOUNT = 101;
+        var txnBalance = 500;
+        var txnPayPrefs = ['USDT', 'SGD', 'USD'];
+
+        function formatTxnFiat(amount) {
+          return '$' + amount.toFixed(2) + ' ' + TXN_FIAT;
+        }
+
+        function formatTxnFiatDelta(amount) {
+          return (amount >= 0 ? '+' : '-') + '$' + Math.abs(amount).toFixed(2) + ' ' + TXN_FIAT;
+        }
+        var txnEdgePathMap = {};
+        var txnDemoStartTime = 0;
+
+        var TXN_INFO_EDGE_IDS = [
+          'te-i2a',
+          'te-i2b',
+          'te-i3',
+          'te-i4d',
+          'te-i4u',
+          'te-i4c',
+          'te-i5',
+          'te-i5b',
+          'te-i5c',
+          'te-i6e',
+          'te-i7',
+          'te-i8',
+          'te-i9',
+          'te-i10',
+          'te-i11',
+          'te-i12',
+        ];
+
+        var TRANSACTION_EDGES = [
+          {
+            id: 'te-i2a',
+            from: 'txn-node-acq',
+            fromSide: 'left',
+            to: 'txn-node-scheme',
+            toSide: 'right',
+            kind: 'info',
+            flow: 'forward',
+            route: 'orth-h',
+            label: 'Payment Request',
+            labelT: 0.32,
+            labelOffsetY: -11,
+          },
+          {
+            id: 'te-i2b',
+            from: 'txn-node-scheme',
+            fromSide: 'left',
+            to: 'txn-node-iss-req',
+            toSide: 'right',
+            kind: 'info',
+            flow: 'forward',
+            route: 'orth-h',
+            label: 'Payment Request',
+            labelT: 0.38,
+            labelOffsetY: -11,
+          },
+          {
+            id: 'te-i3',
+            from: 'txn-node-iss-auth',
+            fromSide: 'right',
+            to: 'txn-node-wl-fx',
+            toSide: 'top',
+            kind: 'info',
+            flow: 'forward',
+            route: 'orth-hv',
+          },
+          {
+            id: 'te-i4d',
+            from: 'txn-node-wl-fx',
+            fromSide: 'right',
+            to: 'txn-node-lp-fx',
+            toSide: 'left',
+            kind: 'info',
+            flow: 'forward',
+            route: 'orth-h',
+            busOffset: -8,
+            label: 'FX Rate Request',
+            labelOn: 'busCenter',
+            labelOffsetY: -10,
+          },
+          {
+            id: 'te-i4u',
+            from: 'txn-node-lp-fx',
+            fromSide: 'left',
+            to: 'txn-node-wl-fx',
+            toSide: 'right',
+            kind: 'info',
+            flow: 'return',
+            route: 'orth-h',
+            busOffset: 12,
+            label: '1 USDT ≈ ' + (TXN_FIAT_AMOUNT / TXN_USDT_AMOUNT).toFixed(2) + ' ' + TXN_FIAT,
+            labelOn: 'busCenter',
+            labelOffsetY: 10,
+          },
+          {
+            id: 'te-i4c',
+            from: 'txn-node-wl-fx',
+            fromSide: 'bottom',
+            to: 'txn-node-wl-transfer',
+            toSide: 'top',
+            kind: 'info',
+            flow: 'forward',
+            route: 'orth-v',
+          },
+          {
+            id: 'te-i5',
+            from: 'txn-node-wl-transfer',
+            fromSide: 'right',
+            to: 'txn-node-waas-fraud',
+            toSide: 'left',
+            kind: 'info',
+            flow: 'forward',
+            route: 'straight-h',
+            label: TXN_USDT_AMOUNT + ' USDT Transfer',
+            labelOn: 'lineCenter',
+          },
+          {
+            id: 'te-i5b',
+            from: 'txn-node-waas-fraud',
+            fromSide: 'bottom',
+            to: 'txn-node-waas-make',
+            toSide: 'top',
+            kind: 'info',
+            flow: 'forward',
+            route: 'orth-v',
+          },
+          {
+            id: 'te-i5c',
+            from: 'txn-node-waas-make',
+            fromSide: 'left',
+            to: 'txn-node-wl-ramp',
+            toSide: 'right',
+            kind: 'info',
+            flow: 'return',
+            route: 'straight-h',
+            label: 'Fraud Check ✓',
+            labelOn: 'lineCenter',
+          },
+          {
+            id: 'te-i6e',
+            from: 'txn-node-wl-ramp',
+            fromSide: 'bottom',
+            to: 'txn-node-wl-rcv-ramp',
+            toSide: 'top',
+            kind: 'info',
+            flow: 'forward',
+            route: 'orth-v',
+          },
+          {
+            id: 'te-i7',
+            from: 'txn-node-wl-rcv-ramp',
+            fromSide: 'right',
+            to: 'txn-node-lp-conv',
+            toSide: 'left',
+            kind: 'info',
+            flow: 'forward',
+            route: 'straight-h',
+            label: 'Off-ramp Request',
+            labelOn: 'lineCenter',
+          },
+          {
+            id: 'te-i8',
+            from: 'txn-node-lp-conv-done',
+            fromSide: 'left',
+            to: 'txn-node-wl-conv-rcv',
+            toSide: 'right',
+            kind: 'info',
+            flow: 'return',
+            route: 'straight-h',
+            label: 'Conversion Complete',
+            labelOn: 'lineCenter',
+          },
+          {
+            id: 'te-i9',
+            from: 'txn-node-wl-conv-rcv',
+            fromSide: 'left',
+            to: 'txn-node-iss-ok',
+            toSide: 'top',
+            kind: 'info',
+            flow: 'return',
+            route: 'top-entry',
+            label: 'Fund In Notification',
+            labelOn: 'lineCenter',
+          },
+          {
+            id: 'te-i10',
+            from: 'txn-node-iss-ok',
+            fromSide: 'left',
+            to: 'txnAppAnchor',
+            toSide: 'right',
+            kind: 'info',
+            flow: 'return',
+            route: 'straight-h',
+            label: 'Payment Success',
+            labelOn: 'lineCenter',
+          },
+          {
+            id: 'te-i11',
+            from: 'txn-node-iss-ok',
+            fromSide: 'right',
+            to: 'txn-node-scheme-ok',
+            toSide: 'left',
+            kind: 'info',
+            flow: 'return',
+            route: 'straight-h',
+            label: 'Payment Success',
+            labelOn: 'lineCenter',
+          },
+          {
+            id: 'te-i12',
+            from: 'txn-node-scheme-ok',
+            fromSide: 'right',
+            to: 'txn-node-acq-settle',
+            toSide: 'left',
+            kind: 'info',
+            flow: 'return',
+            route: 'straight-h',
+            label: 'Payment Success',
+            labelOn: 'lineCenter',
+          },
+          {
+            id: 'te-f1',
+            from: 'acct-txn-waas-acct',
+            fromSide: 'left',
+            to: 'acct-txn-lp-acct',
+            toSide: 'right',
+            kind: 'fund',
+            route: 'orth-h',
+            fundAnchor: true,
+            fundDot: true,
+          },
+          {
+            id: 'te-f2',
+            from: 'acct-txn-lp-fiat',
+            fromSide: 'left',
+            to: 'acct-txn-issuer',
+            toSide: 'right',
+            kind: 'fund',
+            route: 'orth-h',
+            fundAnchor: true,
+            fundDot: true,
+          },
+          {
+            id: 'te-f3',
+            from: 'acct-txn-issuer',
+            fromSide: 'bottom',
+            to: 'acct-txn-acq-acct',
+            toSide: 'left',
+            kind: 'fund',
+            route: 'fund-down-h',
+            fundAnchor: true,
+            fundDot: true,
+          },
+          {
+            id: 'te-f4',
+            from: 'acct-txn-acq-acct',
+            fromSide: 'right',
+            to: 'txnMchFundAnchor',
+            toSide: 'left',
+            kind: 'fund',
+            route: 'straight-h',
+            fundAnchor: true,
+            fundDot: true,
+          },
+        ];
+
+        var TXN_ALL_EDGES = TRANSACTION_EDGES.map(function (e) {
+          return e.id;
+        });
+
+        var TRANSACTION_STEPS = [
+          {
+            label: 'APP → Merchant: payment initiated',
+            nodes: [],
+            edges: [],
+            txn: { s1: true },
+            delay: 2000,
+          },
+          {
+            label: 'Acquirer → Scheme → Issuing',
+            nodes: ['txn-node-acq', 'txn-node-scheme', 'txn-node-iss-req'],
+            edges: ['te-i2a', 'te-i2b'],
+            txn: { s2: true },
+            delay: 2000,
+          },
+          {
+            label: 'Issuing: Authorization Check → WL',
+            nodes: ['txn-node-iss-auth', 'txn-node-wl-fx'],
+            edges: ['te-i2a', 'te-i2b', 'te-i3'],
+            txn: { s3: true },
+            delay: 2000,
+          },
+          {
+            label: 'WL ↔ LP: FX rate inquiry',
+            nodes: ['txn-node-wl-fx', 'txn-node-lp-fx'],
+            edges: ['te-i2a', 'te-i2b', 'te-i3', 'te-i4d', 'te-i4u'],
+            txn: { s4: true },
+            delay: 2000,
+          },
+          {
+            label: 'WL Asset Transfer → WAAS Fraud Check',
+            nodes: ['txn-node-wl-transfer', 'txn-node-waas-fraud'],
+            edges: ['te-i2a', 'te-i2b', 'te-i3', 'te-i4d', 'te-i4u', 'te-i4c', 'te-i5'],
+            txn: { s5: true },
+            delay: 2000,
+          },
+          {
+            label: 'WAAS Make Transfer → WL Ramp Off',
+            nodes: ['txn-node-waas-make', 'txn-node-wl-ramp'],
+            edges: [
+              'te-i2a',
+              'te-i2b',
+              'te-i3',
+              'te-i4d',
+              'te-i4u',
+              'te-i4c',
+              'te-i5',
+              'te-i5b',
+              'te-i5c',
+            ],
+            txn: { s6: true },
+            delay: 2000,
+          },
+          {
+            label: 'WL Receive Ramp Off → Liquidity',
+            nodes: ['txn-node-wl-rcv-ramp', 'txn-node-lp-conv'],
+            edges: [
+              'te-i2a',
+              'te-i2b',
+              'te-i3',
+              'te-i4d',
+              'te-i4u',
+              'te-i4c',
+              'te-i5',
+              'te-i5b',
+              'te-i5c',
+              'te-i6e',
+              'te-i7',
+            ],
+            txn: { s7: true },
+            delay: 2000,
+          },
+          {
+            label: 'Liquidity → WL: conversion complete',
+            nodes: ['txn-node-lp-conv-done', 'txn-node-wl-conv-rcv'],
+            edges: [
+              'te-i2a',
+              'te-i2b',
+              'te-i3',
+              'te-i4d',
+              'te-i4u',
+              'te-i4c',
+              'te-i5',
+              'te-i5b',
+              'te-i5c',
+              'te-i6e',
+              'te-i7',
+              'te-i8',
+            ],
+            txn: { s8: true },
+            delay: 2000,
+          },
+          {
+            label: 'WL → Issuing: fund-in notification',
+            nodes: ['txn-node-wl-conv-rcv', 'txn-node-iss-ok'],
+            edges: [
+              'te-i2a',
+              'te-i2b',
+              'te-i3',
+              'te-i4d',
+              'te-i4u',
+              'te-i4c',
+              'te-i5',
+              'te-i5b',
+              'te-i5c',
+              'te-i6e',
+              'te-i7',
+              'te-i8',
+              'te-i9',
+            ],
+            txn: { s9: true },
+            delay: 2000,
+          },
+          {
+            label: 'Issuing → APP & Scheme → Acquirer → Merchant',
+            nodes: ['txn-node-iss-ok', 'txn-node-scheme-ok', 'txn-node-acq-settle'],
+            edges: TXN_INFO_EDGE_IDS,
+            txn: { s10: true },
+            delay: 2000,
+          },
+          {
+            label: 'Fund: WAAS → LP (-' + TXN_USDT_AMOUNT + ' USDT)',
+            nodes: [],
+            edges: TXN_INFO_EDGE_IDS.concat(['te-f1']),
+            txn: { fund1: true },
+            delay: 2000,
+          },
+          {
+            label: 'Fund: LP → Issuer (+' + formatTxnFiatDelta(TXN_FIAT_AMOUNT) + ' fiat)',
+            nodes: [],
+            edges: TXN_INFO_EDGE_IDS.concat(['te-f1', 'te-f2']),
+            txn: { fund2: true },
+            delay: 2000,
+          },
+          {
+            label: 'Fund: Issuer → Acquirer → Merchant',
+            nodes: [],
+            edges: TXN_ALL_EDGES,
+            txn: { fund3: true },
+            delay: 2000,
+          },
+          {
+            label: 'Transaction complete',
+            nodes: [],
+            edges: TXN_ALL_EDGES,
+            txn: { complete: true },
+            delay: 0,
+          },
+        ];
+
+
+        var currentScene = 'card-issuance';
+        var demoIndex = 0;
+        var demoRunning = false;
+        var demoPaused = false;
+        var demoTimer = null;
+        var txnQrAutoStartTimer = null;
+        var demoWalletId = '';
+        var demoCardLast4 = '';
+
+        var buttons = document.querySelectorAll('.scene-btn');
+        var labelEl = document.getElementById('selectedSceneLabel');
+        var stepEl = document.getElementById('stepIndicator');
+        var btnStart = document.getElementById('btnStart');
+        var btnPause = document.getElementById('btnPause');
+        var btnReset = document.getElementById('btnReset');
+        var btnApplyCard = document.getElementById('btnApplyCard');
+        var btnTopUp = document.getElementById('btnTopUp');
+        var phoneScreen = document.getElementById('phoneScreen');
+        var cardEmpty = document.getElementById('cardEmpty');
+        var cardSuccess = document.getElementById('cardSuccess');
+        var cardPan = document.getElementById('cardPan');
+        var issuanceStatus = document.getElementById('issuanceStatus');
+        var walletIdLine = document.getElementById('walletIdLine');
+        var recvAmount = document.getElementById('recvAmount');
+        var recvCoin = document.getElementById('recvCoin');
+        var recvCoinIcon = document.getElementById('recvCoinIcon');
+        var payFiat = document.getElementById('payFiat');
+        var payAmount = document.getElementById('payAmount');
+        var onrampFeeAmt = document.getElementById('onrampFeeAmt');
+        var onrampTotalAmt = document.getElementById('onrampTotalAmt');
+        var onrampBuyTitle = document.getElementById('onrampBuyTitle');
+        var onrampStatus = document.getElementById('onrampStatus');
+        var payFiatFlag = document.getElementById('payFiatFlag');
+        var onrampRateHint = document.getElementById('onrampRateHint');
+        var onrampSuccessOverlay = document.getElementById('onrampSuccessOverlay');
+        var onrampSuccessAmount = document.getElementById('onrampSuccessAmount');
+        var onrampSuccessMeta = document.getElementById('onrampSuccessMeta');
+        var onrampSuccessClose = document.getElementById('onrampSuccessClose');
+        var chipUsd = document.getElementById('chipUsd');
+        var chipSgd = document.getElementById('chipSgd');
+        var onrampBalanceChips = document.getElementById('onrampBalanceChips');
+        var valIssuerSettlement = document.getElementById('valIssuerSettlement');
+        var valLpFiat = document.getElementById('valLpFiat');
+        var valLpStable = document.getElementById('valLpStable');
+        var valWaasOnchain = document.getElementById('valWaasOnchain');
+        var btnGenQr = document.getElementById('btnGenQr');
+        var txnQrBox = document.getElementById('txnQrBox');
+        var qrModalOverlay = document.getElementById('qrModalOverlay');
+        var qrModalClose = document.getElementById('qrModalClose');
+        var txnQrHost = document.getElementById('txnQrHost');
+        var qrModalAmount = document.getElementById('qrModalAmount');
+        var qrModalMeta = document.getElementById('qrModalMeta');
+
+        var FLAG_PATHS = {
+          USD: 'assets/flags/us.png',
+          SGD: 'assets/flags/sg.png',
+          USDT: 'assets/flags/usdt.png',
+          USDC: 'assets/flags/usdc.png',
+        };
+
+        var PAYNOW_DEMO = {
+          proxyType: '0',
+          proxyValue: '+6591234567',
+          merchantName: 'Demo Merchant',
+          amount: TXN_FIAT_AMOUNT.toFixed(2),
+          ref: 'ORD-001',
+          editable: false,
+        };
+        var txnPayPrefList = document.getElementById('txnPayPrefList');
+        var txnBalanceAmt = document.getElementById('txnBalanceAmt');
+        var txnBalanceEquiv = document.getElementById('txnBalanceEquiv');
+        var txnStatus = document.getElementById('txnStatus');
+        var mchOrderStatus = document.getElementById('mchOrderStatus');
+        var mchRevenue = document.getElementById('mchRevenue');
+        var mchTxnCount = document.getElementById('mchTxnCount');
+        var mchSuccessRate = document.getElementById('mchSuccessRate');
+        var mchSettlement = document.getElementById('mchSettlement');
+        var valTxnIssuer = document.getElementById('valTxnIssuer');
+        var valTxnLpAcct = document.getElementById('valTxnLpAcct');
+        var valTxnLpFiat = document.getElementById('valTxnLpFiat');
+        var valTxnWaasAcct = document.getElementById('valTxnWaasAcct');
+        var txnMchFundAnchor = document.getElementById('txnMchFundAnchor');
+        var txnAppAnchor = document.getElementById('txnAppAnchor');
+        var valTxnAcqAcct = document.getElementById('valTxnAcqAcct');
+        var txnVFlow = document.getElementById('txnVFlow');
+        var txnSvg = document.getElementById('txnSvg');
+        var txnSuccessBanner = document.getElementById('txnSuccessBanner');
+        var diagramRoot = document.getElementById('mainDiagram');
+        var arrowSvg = document.getElementById('arrowSvg');
+        var edgePathMap = {};
+
+        function getSceneEdges() {
+          if (currentScene === 'onramp') return ONRAMP_EDGES;
+          if (currentScene === 'card-issuance') return ISSUANCE_EDGES;
+          if (currentScene === 'transaction') return [];
+          return [];
+        }
+
+        function getSceneSteps() {
+          if (currentScene === 'onramp') return ONRAMP_STEPS;
+          if (currentScene === 'card-issuance') return ISSUANCE_STEPS;
+          if (currentScene === 'transaction') return TRANSACTION_STEPS;
+          return [];
+        }
+
+        function formatMoney(n, fiat) {
+          return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + fiat;
+        }
+
+        function flagImgHtml(fiat, cls) {
+          var path = FLAG_PATHS[fiat];
+          if (!path) return '';
+          return (
+            '<img class="fiat-flag' +
+            (cls ? ' ' + cls : '') +
+            '" src="' +
+            path +
+            '" alt="' +
+            fiat +
+            '" data-flag-fiat="' +
+            fiat +
+            '" />'
+          );
+        }
+
+        function setupFlagFallback(img) {
+          if (!img || img.dataset.flagBound) return;
+          img.dataset.flagBound = '1';
+          img.addEventListener('error', function onFlagErr() {
+            var fiat = img.getAttribute('data-flag-fiat');
+            var emoji =
+              fiat === 'SGD'
+                ? '🇸🇬'
+                : fiat === 'USD'
+                  ? '🇺🇸'
+                  : fiat === 'USDT' || fiat === 'USDC'
+                    ? '💵'
+                    : '';
+            if (!emoji) return;
+            var span = document.createElement('span');
+            span.textContent = emoji;
+            span.className = 'flag-emoji-fallback';
+            if (img.parentNode) img.parentNode.replaceChild(span, img);
+          });
+        }
+
+        function bindAllFlagImages(root) {
+          (root || document).querySelectorAll('img[data-flag-fiat]').forEach(setupFlagFallback);
+        }
+
+        function setFlagImage(el, fiat) {
+          if (!el || !FLAG_PATHS[fiat]) return;
+          if (el.tagName !== 'IMG') {
+            var parent = el.parentNode;
+            if (!parent) return;
+            var img = document.createElement('img');
+            img.className = el.className || 'fiat-flag';
+            if (el.id) img.id = el.id;
+            parent.replaceChild(img, el);
+            setFlagImage(img, fiat);
+            return;
+          }
+          el.src = FLAG_PATHS[fiat];
+          el.setAttribute('data-flag-fiat', fiat);
+          el.alt = fiat;
+          delete el.dataset.flagBound;
+          setupFlagFallback(el);
+        }
+
+        function formatOnrampRateLine(coin, fiat) {
+          var rate = ONRAMP_RATES[fiat] && ONRAMP_RATES[fiat][coin];
+          if (!rate) return '';
+          return '1 ' + coin + ' = ' + rate.toFixed(2) + ' ' + fiat;
+        }
+
+        function syncOnrampSelectors() {
+          var coin = recvCoin ? recvCoin.value : 'USDT';
+          var fiat = payFiat ? payFiat.value : 'USD';
+          if (onrampBuyTitle) onrampBuyTitle.textContent = 'Buy ' + coin;
+          if (recvCoinIcon) setFlagImage(recvCoinIcon, coin);
+          if (payFiatFlag) setFlagImage(payFiatFlag, fiat);
+          if (onrampRateHint) onrampRateHint.textContent = formatOnrampRateLine(coin, fiat);
+          onrampQuote.coin = coin;
+          onrampQuote.fiat = fiat;
+        }
+
+        function formatChip(n, fiat) {
+          if (FLAG_PATHS[fiat]) {
+            return (
+              '<span class="fiat-flag-wrap">' +
+              flagImgHtml(fiat) +
+              fiat +
+              ' ' +
+              n.toLocaleString('en-US') +
+              '</span>'
+            );
+          }
+          return fiat + ' ' + n.toLocaleString('en-US');
+        }
+
+        var PAYNOW_CRC_TABLE = [
+          0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a,
+          0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef, 0x1231, 0x0210, 0x3273, 0x2252, 0x52b5, 0x4294,
+          0x72f7, 0x62d6, 0x9339, 0x8318, 0xb37b, 0xa35a, 0xd3bd, 0xc39c, 0xf3ff, 0xe3de, 0x2462,
+          0x3443, 0x0420, 0x1401, 0x64e6, 0x74c7, 0x44a4, 0x5485, 0xa56a, 0xb54b, 0x8528, 0x9509,
+          0xe5ee, 0xf5cf, 0xc5ac, 0xd58d, 0x3653, 0x2672, 0x1611, 0x0630, 0x76d7, 0x66f6, 0x5695,
+          0x46b4, 0xb75b, 0xa77a, 0x9719, 0x8738, 0xf7df, 0xe7fe, 0xd79d, 0xc7bc, 0x48c4, 0x58e5,
+          0x6886, 0x78a7, 0x0840, 0x1861, 0x2802, 0x3823, 0xc9cc, 0xd9ed, 0xe98e, 0xf9af, 0x8948,
+          0x9969, 0xa90a, 0xb92b, 0x5af5, 0x4ad4, 0x7ab7, 0x6a96, 0x1a71, 0x0a50, 0x3a33, 0x2a12,
+          0xdbfd, 0xcbdc, 0xfbbf, 0xeb9e, 0x9b79, 0x8b58, 0xbb3b, 0xab1a, 0x6ca6, 0x7c87, 0x4ce4,
+          0x5cc5, 0x2c22, 0x3c03, 0x0c60, 0x1c41, 0xedae, 0xfd8f, 0xcdec, 0xddcd, 0xad2a, 0xbd0b,
+          0x8d68, 0x9d49, 0x7e97, 0x6eb6, 0x5ed5, 0x4ef4, 0x3e13, 0x2e32, 0x1e51, 0x0e70, 0xff9f,
+          0xefbe, 0xdfdd, 0xcffc, 0xbf1b, 0xaf3a, 0x9f59, 0x8f78, 0x9188, 0x81a9, 0xb1ca, 0xa1eb,
+          0xd10c, 0xc12d, 0xf14e, 0xe16f, 0x1080, 0x00a1, 0x30c2, 0x20e3, 0x5004, 0x4025, 0x7046,
+          0x6067, 0x83b9, 0x9398, 0xa3fb, 0xb3da, 0xc33d, 0xd31c, 0xe37f, 0xf35e, 0x02b1, 0x1290,
+          0x22f3, 0x32d2, 0x4235, 0x5214, 0x6277, 0x7256, 0xb5ea, 0xa5cb, 0x95a8, 0x8589, 0xf56e,
+          0xe54f, 0xd52c, 0xc50d, 0x34e2, 0x24c3, 0x14a0, 0x0481, 0x7466, 0x6447, 0x5424, 0x4405,
+          0xa7db, 0xb7fa, 0x8799, 0x97b8, 0xe75f, 0xf77e, 0xc71d, 0xd73c, 0x26d3, 0x36f2, 0x0691,
+          0x16b0, 0x6657, 0x7676, 0x4615, 0x5634, 0xd94c, 0xc96d, 0xf90e, 0xe92f, 0x99c8, 0x89e9,
+          0xb98a, 0xa9ab, 0x5844, 0x4865, 0x7806, 0x6827, 0x18c0, 0x08e1, 0x3882, 0x28a3, 0xcb7d,
+          0xdb5c, 0xeb3f, 0xfb1e, 0x8bf9, 0x9bd8, 0xabbb, 0xbb9a, 0x4a75, 0x5a54, 0x6a37, 0x7a16,
+          0x0af1, 0x1ad0, 0x2ab3, 0x3a92, 0xfd2e, 0xed0f, 0xdd6c, 0xcd4d, 0xbdaa, 0xad8b, 0x9de8,
+          0x8dc9, 0x7c26, 0x6c07, 0x5c64, 0x4c45, 0x3ca2, 0x2c83, 0x1ce0, 0x0cc1, 0xef1f, 0xff3e,
+          0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93,
+          0x3eb2, 0x0ed1, 0x1ef0,
+        ];
+
+        function payNowCrc16(str) {
+          var crc = 0xffff;
+          for (var i = 0; i < str.length; i++) {
+            var j = (str.charCodeAt(i) ^ (crc >> 8)) & 0xff;
+            crc = PAYNOW_CRC_TABLE[j] ^ (crc << 8);
+          }
+          return ((crc ^ 0) & 0xffff).toString(16).toUpperCase().padStart(4, '0');
+        }
+
+        function payNowTlv(id, value) {
+          var v = String(value);
+          return id + String(v.length).padStart(2, '0') + v;
+        }
+
+        function payNowTlvGroup(items) {
+          return items
+            .map(function (item) {
+              return payNowTlv(item.id, item.value);
+            })
+            .join('');
+        }
+
+        function generatePayNowPayload(opts) {
+          var merchantInfo = payNowTlvGroup([
+            { id: '00', value: 'SG.PAYNOW' },
+            { id: '01', value: opts.proxyType },
+            { id: '02', value: opts.proxyValue },
+            { id: '03', value: opts.editable ? '1' : '0' },
+          ]);
+          var payload =
+            payNowTlv('00', '01') +
+            payNowTlv('01', '12') +
+            payNowTlv('26', merchantInfo) +
+            payNowTlv('52', '0000') +
+            payNowTlv('53', '702') +
+            payNowTlv('54', opts.amount) +
+            payNowTlv('58', 'SG') +
+            payNowTlv('59', opts.merchantName) +
+            payNowTlv('60', 'Singapore') +
+            payNowTlv('62', payNowTlvGroup([{ id: '01', value: opts.ref }]));
+          payload += '6304';
+          return payload + payNowCrc16(payload);
+        }
+
+        function closeTxnQrModal() {
+          if (qrModalOverlay) {
+            qrModalOverlay.classList.remove('open');
+            qrModalOverlay.setAttribute('aria-hidden', 'true');
+          }
+        }
+
+        function showTxnPayNowQr() {
+          if (demoRunning) return;
+          if (!txnQrHost || typeof QRCode === 'undefined') {
+            if (txnStatus) txnStatus.textContent = 'QR library not loaded';
+            return;
+          }
+          var payload = generatePayNowPayload(PAYNOW_DEMO);
+          if (qrModalAmount) qrModalAmount.textContent = TXN_FIAT + ' ' + PAYNOW_DEMO.amount;
+          if (qrModalMeta) {
+            qrModalMeta.textContent =
+              PAYNOW_DEMO.merchantName + ' · ' + PAYNOW_DEMO.ref + ' · ' + PAYNOW_DEMO.proxyValue;
+          }
+          txnQrHost.innerHTML = '';
+          try {
+            new QRCode(txnQrHost, {
+              text: payload,
+              width: 132,
+              height: 132,
+              colorDark: '#0f172a',
+              colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.M,
+            });
+          } catch (err) {
+            if (txnStatus) txnStatus.textContent = 'QR generation failed';
+            return;
+          }
+          if (txnQrBox) txnQrBox.classList.add('ready');
+          if (qrModalOverlay) {
+            qrModalOverlay.classList.add('open');
+            qrModalOverlay.setAttribute('aria-hidden', 'false');
+          }
+          if (txnStatus) {
+            txnStatus.textContent =
+              'PayNow QR ready — scan to pay ' + TXN_FIAT + ' ' + PAYNOW_DEMO.amount;
+            txnStatus.classList.add('success');
+          }
+          clearTimeout(txnQrAutoStartTimer);
+          txnQrAutoStartTimer = setTimeout(function () {
+            txnQrAutoStartTimer = null;
+            if (currentScene === 'transaction' && !demoRunning) {
+              startDemo({ keepQr: true });
+            }
+          }, 1000);
+        }
+
+        function formatDelta(n, unit) {
+          return (
+            n.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) +
+            ' ' +
+            unit
+          );
+        }
+
+        function randomWalletId() {
+          var hex = '';
+          for (var i = 0; i < 8; i++) {
+            hex += Math.floor(Math.random() * 16).toString(16);
+          }
+          return 'wl-wallet-' + hex;
+        }
+
+        function randomLast4() {
+          return String(Math.floor(1000 + Math.random() * 9000));
+        }
+
+        function setStepText(text) {
+          if (stepEl) stepEl.textContent = text;
+        }
+
+        function getNodeAnchor(nodeId, side, rootEl) {
+          var el = document.getElementById(nodeId);
+          var root = rootEl || diagramRoot;
+          if (!el || !root) return null;
+          var dr = root.getBoundingClientRect();
+          var r = el.getBoundingClientRect();
+          var x = r.left - dr.left;
+          var y = r.top - dr.top;
+          var w = r.width;
+          var h = r.height;
+          switch (side) {
+            case 'right':
+              return { x: x + w, y: y + h / 2 };
+            case 'left':
+              return { x: x, y: y + h / 2 };
+            case 'bottom':
+              return { x: x + w / 2, y: y + h };
+            case 'top':
+              return { x: x + w / 2, y: y };
+            default:
+              return { x: x + w / 2, y: y + h / 2 };
+          }
+        }
+
+        function getTxnNodeCenterY(nodeId) {
+          var el = document.getElementById(nodeId);
+          if (!el || !txnVFlow) return null;
+          var dr = txnVFlow.getBoundingClientRect();
+          var r = el.getBoundingClientRect();
+          return r.top - dr.top + r.height / 2;
+        }
+
+        function getTxnAnchor(nodeId, side) {
+          var el = document.getElementById(nodeId);
+          if (!el || !txnVFlow) return null;
+          if (nodeId.indexOf('acct-txn-') === 0) {
+            var cyl = el.querySelector('.cylinder');
+            if (cyl) {
+              var dr = txnVFlow.getBoundingClientRect();
+              var cr = cyl.getBoundingClientRect();
+              var cx = cr.left - dr.left + cr.width / 2;
+              var cy = cr.top - dr.top + cr.height / 2;
+              if (side === 'right') return { x: cr.right - dr.left, y: cy };
+              if (side === 'left') return { x: cr.left - dr.left, y: cy };
+              if (side === 'bottom') return { x: cx, y: cr.bottom - dr.top };
+              if (side === 'top') return { x: cx, y: cr.top - dr.top };
+            }
+          }
+          return getNodeAnchor(nodeId, side, txnVFlow);
+        }
+
+        function syncTxnMerchantFundAnchor() {
+          if (!txnMchFundAnchor || !txnVFlow) return;
+          var target = document.getElementById('mchSettlementBox') || document.getElementById('mchSettlement');
+          if (!target) return;
+          var tr = txnVFlow.getBoundingClientRect();
+          var mr = target.getBoundingClientRect();
+          txnMchFundAnchor.style.top = mr.top + mr.height / 2 - tr.top + 'px';
+          txnMchFundAnchor.style.transform = 'translateY(-50%)';
+        }
+
+        function syncTxnAppAnchor() {
+          if (!txnAppAnchor || !txnVFlow) return;
+          var target = document.getElementById('txnStatus') || document.getElementById('txnQrBox');
+          if (!target) return;
+          var tr = txnVFlow.getBoundingClientRect();
+          var ar = target.getBoundingClientRect();
+          txnAppAnchor.style.top = ar.top + ar.height / 2 - tr.top + 'px';
+          txnAppAnchor.style.transform = 'translateY(-50%)';
+        }
+
+        function getTxnBusY(edge, fromPt, toPt) {
+          var fromCy = getTxnNodeCenterY(edge.from);
+          var baseY = fromCy != null ? fromCy : fromPt.y;
+          if (edge.busOffset != null) return baseY + edge.busOffset;
+          var toCy = getTxnNodeCenterY(edge.to);
+          if (toCy != null && fromCy != null) return (fromCy + toCy) / 2;
+          return (fromPt.y + toPt.y) / 2;
+        }
+
+        function getTxnLabelPos(edge, fromPt, toPt, pathMeta) {
+          if (edge.labelOn === 'busCenter' && pathMeta && pathMeta.busY != null) {
+            return {
+              lx: (fromPt.x + toPt.x) / 2 + (edge.labelOffsetX || 0),
+              ly: pathMeta.busY + (edge.labelOffsetY || -10),
+            };
+          }
+          if (edge.labelOn === 'lineCenter' && pathMeta && pathMeta.lineY != null) {
+            return {
+              lx: (fromPt.x + toPt.x) / 2 + (edge.labelOffsetX || 0),
+              ly: pathMeta.lineY + (edge.labelOffsetY || -10),
+            };
+          }
+          if (edge.labelOn === 'nodeCenter') {
+            var fromCy = getTxnNodeCenterY(edge.from);
+            var toCy = getTxnNodeCenterY(edge.to);
+            return {
+              lx: (fromPt.x + toPt.x) / 2 + (edge.labelOffsetX || 0),
+              ly:
+                (fromCy != null && toCy != null ? (fromCy + toCy) / 2 : (fromPt.y + toPt.y) / 2) +
+                (edge.labelOffsetY || -10),
+            };
+          }
+          var t = edge.labelT != null ? edge.labelT : 0.5;
+          return {
+            lx: fromPt.x + (toPt.x - fromPt.x) * t + (edge.labelOffsetX || 0),
+            ly: fromPt.y + (toPt.y - fromPt.y) * t + (edge.labelOffsetY || -10),
+          };
+        }
+
+        function buildTxnOrthPath(edge) {
+          var fromPt = getTxnAnchor(edge.from, edge.fromSide);
+          var toPt = getTxnAnchor(edge.to, edge.toSide);
+          if (!fromPt || !toPt) return { d: '', meta: {} };
+
+          if (edge.route === 'straight-v') {
+            var vx = fromPt.x;
+            return {
+              d: 'M ' + vx + ' ' + fromPt.y + ' L ' + vx + ' ' + toPt.y,
+              meta: {},
+            };
+          }
+
+          if (edge.route === 'straight-h') {
+            var fromCy = getTxnNodeCenterY(edge.from);
+            var hy = fromCy != null ? fromCy : fromPt.y;
+            if (edge.to === 'txnAppAnchor') {
+              hy = fromCy != null ? fromCy : fromPt.y;
+            } else if (edge.kind === 'fund' && edge.from.indexOf('acct-txn-') === 0) {
+              hy = fromPt.y;
+            } else if (edge.from.indexOf('txn-node-') === 0) {
+              var toCy = getTxnNodeCenterY(edge.to);
+              if (toCy != null && fromCy != null) hy = (fromCy + toCy) / 2;
+            }
+            return {
+              d: 'M ' + fromPt.x + ' ' + hy + ' L ' + toPt.x + ' ' + hy,
+              meta: { lineY: hy },
+            };
+          }
+
+          if (edge.route === 'fund-down-h') {
+            return {
+              d:
+                'M ' +
+                fromPt.x +
+                ' ' +
+                fromPt.y +
+                ' L ' +
+                fromPt.x +
+                ' ' +
+                toPt.y +
+                ' L ' +
+                toPt.x +
+                ' ' +
+                toPt.y,
+              meta: {},
+            };
+          }
+
+          if (edge.route === 'top-entry') {
+            var lineY = getTxnNodeCenterY(edge.from) || fromPt.y;
+            var topY = toPt.y;
+            var stopY = topY - 7;
+            return {
+              d:
+                'M ' +
+                fromPt.x +
+                ' ' +
+                lineY +
+                ' L ' +
+                toPt.x +
+                ' ' +
+                lineY +
+                ' L ' +
+                toPt.x +
+                ' ' +
+                stopY,
+              meta: { lineY: lineY, labelX: (fromPt.x + toPt.x) / 2 },
+            };
+          }
+
+          if (edge.route === 'fund-l') {
+            return {
+              d:
+                'M ' +
+                fromPt.x +
+                ' ' +
+                fromPt.y +
+                ' L ' +
+                fromPt.x +
+                ' ' +
+                toPt.y +
+                ' L ' +
+                toPt.x +
+                ' ' +
+                toPt.y,
+              meta: {},
+            };
+          }
+
+          if (edge.route === 'orth-v') {
+            var vx = toPt.x;
+            if (Math.abs(fromPt.x - toPt.x) > 4) {
+              return {
+                d:
+                  'M ' +
+                  fromPt.x +
+                  ' ' +
+                  fromPt.y +
+                  ' L ' +
+                  vx +
+                  ' ' +
+                  fromPt.y +
+                  ' L ' +
+                  vx +
+                  ' ' +
+                  toPt.y,
+                meta: {},
+              };
+            }
+            return { d: 'M ' + vx + ' ' + fromPt.y + ' L ' + vx + ' ' + toPt.y, meta: {} };
+          }
+          if (edge.route === 'orth-h') {
+            if (edge.busOffset != null) {
+              var busLineY = getTxnBusY(edge, fromPt, toPt);
+              return {
+                d: 'M ' + fromPt.x + ' ' + busLineY + ' L ' + toPt.x + ' ' + busLineY,
+                meta: { busY: busLineY, lineY: busLineY },
+              };
+            }
+            if (edge.kind === 'fund' && Math.abs(fromPt.y - toPt.y) < 28) {
+              var fy = (fromPt.y + toPt.y) / 2;
+              return {
+                d: 'M ' + fromPt.x + ' ' + fy + ' L ' + toPt.x + ' ' + fy,
+                meta: { lineY: fy },
+              };
+            }
+            var hy2 =
+              getTxnNodeCenterY(edge.from) != null && getTxnNodeCenterY(edge.to) != null
+                ? (getTxnNodeCenterY(edge.from) + getTxnNodeCenterY(edge.to)) / 2
+                : (fromPt.y + toPt.y) / 2;
+            if (Math.abs(fromPt.y - toPt.y) <= 4) {
+              return {
+                d: 'M ' + fromPt.x + ' ' + hy2 + ' L ' + toPt.x + ' ' + hy2,
+                meta: { lineY: hy2 },
+              };
+            }
+            var busY2 = hy2;
+            return {
+              d:
+                'M ' +
+                fromPt.x +
+                ' ' +
+                fromPt.y +
+                ' L ' +
+                fromPt.x +
+                ' ' +
+                busY2 +
+                ' L ' +
+                toPt.x +
+                ' ' +
+                busY2 +
+                ' L ' +
+                toPt.x +
+                ' ' +
+                toPt.y,
+              meta: { busY: busY2, lineY: busY2 },
+            };
+          }
+          if (edge.route === 'orth-vh') {
+            return {
+              d:
+                'M ' +
+                fromPt.x +
+                ' ' +
+                fromPt.y +
+                ' L ' +
+                fromPt.x +
+                ' ' +
+                toPt.y +
+                ' L ' +
+                toPt.x +
+                ' ' +
+                toPt.y,
+              meta: {},
+            };
+          }
+          if (edge.route === 'orth-hv') {
+            return {
+              d:
+                'M ' +
+                fromPt.x +
+                ' ' +
+                fromPt.y +
+                ' L ' +
+                toPt.x +
+                ' ' +
+                fromPt.y +
+                ' L ' +
+                toPt.x +
+                ' ' +
+                toPt.y,
+              meta: {},
+            };
+          }
+          return { d: 'M ' + fromPt.x + ' ' + fromPt.y + ' L ' + toPt.x + ' ' + toPt.y, meta: {} };
+        }
+
+        function ensureTxnArrowDefs(svg) {
+          var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+          var mInfo = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+          mInfo.setAttribute('id', 'txn-arrow-info');
+          mInfo.setAttribute('viewBox', '0 0 10 10');
+          mInfo.setAttribute('refX', '9');
+          mInfo.setAttribute('refY', '5');
+          mInfo.setAttribute('markerWidth', '6');
+          mInfo.setAttribute('markerHeight', '6');
+          mInfo.setAttribute('orient', 'auto');
+          var hInfo = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          hInfo.setAttribute('d', 'M 0 0 L 10 5 L 0 10 Z');
+          hInfo.setAttribute('fill', '#10b981');
+          mInfo.appendChild(hInfo);
+          defs.appendChild(mInfo);
+
+          var mFund = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+          mFund.setAttribute('id', 'txn-arrow-fund');
+          mFund.setAttribute('viewBox', '0 0 10 10');
+          mFund.setAttribute('refX', '9');
+          mFund.setAttribute('refY', '5');
+          mFund.setAttribute('markerWidth', '7');
+          mFund.setAttribute('markerHeight', '7');
+          mFund.setAttribute('orient', 'auto');
+          var hFund = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          hFund.setAttribute('d', 'M 0 0 L 10 5 L 0 10 Z');
+          hFund.setAttribute('fill', '#ef4444');
+          mFund.appendChild(hFund);
+          defs.appendChild(mFund);
+          svg.appendChild(defs);
+        }
+
+        function buildTxnEdgePaths() {
+          if (!txnSvg || !txnVFlow) return;
+          syncTxnMerchantFundAnchor();
+          syncTxnAppAnchor();
+          var w = txnVFlow.clientWidth;
+          var h = txnVFlow.clientHeight;
+          txnSvg.innerHTML = '';
+          txnEdgePathMap = {};
+          txnSvg.setAttribute('width', w);
+          txnSvg.setAttribute('height', h);
+          txnSvg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+          ensureTxnArrowDefs(txnSvg);
+
+          TRANSACTION_EDGES.forEach(function (edge) {
+            var built = buildTxnOrthPath(edge);
+            var d = built.d;
+            var pathMeta = built.meta || {};
+            if (!d) return;
+
+            var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('id', edge.id);
+            var pathCls = edge.kind;
+            if (edge.kind === 'info') {
+              pathCls = edge.flow === 'return' ? 'info-return' : 'info-forward';
+            }
+            path.setAttribute('class', 'txn-flow-path ' + pathCls);
+            path.setAttribute('fill', 'none');
+            if (edge.kind === 'fund') {
+              path.setAttribute('marker-end', 'url(#txn-arrow-fund)');
+            } else {
+              path.setAttribute('marker-end', 'url(#txn-arrow-info)');
+            }
+            txnSvg.appendChild(path);
+            txnEdgePathMap[edge.id] = path;
+
+            if (edge.label) {
+              var fromPt = getTxnAnchor(edge.from, edge.fromSide);
+              var toPt = getTxnAnchor(edge.to, edge.toSide);
+              if (fromPt && toPt) {
+                var labelPt = getTxnLabelPos(edge, fromPt, toPt, pathMeta);
+                var lx = labelPt.lx;
+                var ly = labelPt.ly;
+                var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', lx);
+                text.setAttribute('y', ly);
+                text.setAttribute(
+                  'class',
+                  'txn-edge-label' + (edge.kind === 'fund' ? ' fund-label' : '')
+                );
+                text.textContent = edge.label;
+                txnSvg.appendChild(text);
+                txnEdgePathMap[edge.id + '-lbl'] = text;
+              }
+            }
+
+            if (edge.fundDot) {
+              var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              dot.setAttribute('r', '4');
+              dot.setAttribute('class', 'txn-fund-dot');
+              var anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+              anim.setAttribute('dur', '1.4s');
+              anim.setAttribute('repeatCount', 'indefinite');
+              anim.setAttribute('path', d);
+              dot.appendChild(anim);
+              txnSvg.appendChild(dot);
+              txnEdgePathMap[edge.id + '-dot'] = dot;
+            }
+          });
+        }
+
+        function animateTxnBalance(el, fromVal, toVal, formatter, flashCls) {
+          if (!el) return;
+          el.classList.remove('flash-green', 'flash-red');
+          void el.offsetWidth;
+          el.classList.add(flashCls);
+          var start = performance.now();
+          var dur = 800;
+          function frame(now) {
+            var t = Math.min(1, (now - start) / dur);
+            var v = fromVal + (toVal - fromVal) * t;
+            el.textContent = formatter(v);
+            if (t < 1) requestAnimationFrame(frame);
+          }
+          requestAnimationFrame(frame);
+        }
+
+        function setTxnNodeText(id, html) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          el.innerHTML = html;
+          el.classList.remove('inactive');
+        }
+
+        function showTxnAccountDelta(id, text, kind) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          el.textContent = text || '';
+          el.classList.remove('pos', 'neg');
+          if (kind) el.classList.add(kind);
+        }
+
+        function showTxnAccountDeltaHtml(id, html) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          el.innerHTML = html || '';
+          el.classList.remove('pos', 'neg');
+        }
+
+        function clearTxnAccountDeltas() {
+          ['deltaTxnLpAcct', 'deltaTxnWaasAcct', 'deltaTxnIssuer', 'deltaTxnLpFiat', 'deltaTxnAcqAcct'].forEach(
+            function (id) {
+              showTxnAccountDeltaHtml(id, '');
+            }
+          );
+        }
+
+        function buildAppLinePath(edge) {
+          var fromPt = getNodeAnchor(edge.from, edge.fromSide || 'left');
+          if (!fromPt) return '';
+          var endX = fromPt.x - (edge.extendLeft || 100);
+          return 'M ' + fromPt.x + ' ' + fromPt.y + ' L ' + endX + ' ' + fromPt.y;
+        }
+
+        function buildFromAppLinePath(edge) {
+          var toPt = getNodeAnchor(edge.to, edge.toSide || 'left');
+          if (!toPt) return '';
+          var startX = toPt.x - (edge.extendLeft || 100);
+          return 'M ' + startX + ' ' + toPt.y + ' L ' + toPt.x + ' ' + toPt.y;
+        }
+
+        function syncMerchantAnchor() {
+          var anchor = document.getElementById('merchantPayAnchor');
+          var colBody = document.querySelector('#col-merchant .col-body');
+          if (!anchor || !colBody) return;
+          var alignNode =
+            currentScene === 'transaction'
+              ? document.getElementById('node-txn-acq-rcv')
+              : null;
+          if (alignNode) {
+            var cb = colBody.getBoundingClientRect();
+            var nr = alignNode.getBoundingClientRect();
+            anchor.style.top = nr.top + nr.height / 2 - cb.top + 'px';
+            anchor.style.transform = 'translateY(-50%)';
+          } else {
+            anchor.style.top = '50%';
+            anchor.style.transform = 'translateY(-50%)';
+          }
+        }
+
+        function buildToMerchantLinePath(edge) {
+          var fromPt = getNodeAnchor(edge.from, edge.fromSide || 'right');
+          if (!fromPt) return '';
+          var anchor = document.getElementById('merchantPayAnchor');
+          var endX = fromPt.x + (edge.extendRight || 110);
+          var y = fromPt.y;
+          if (anchor && diagramRoot) {
+            var dr = diagramRoot.getBoundingClientRect();
+            var r = anchor.getBoundingClientRect();
+            endX = r.left - dr.left;
+          }
+          return 'M ' + fromPt.x + ' ' + y + ' L ' + endX + ' ' + y;
+        }
+
+        function buildFromMerchantLinePath(edge) {
+          var toPt = getNodeAnchor(edge.to, edge.toSide || 'left');
+          if (!toPt) return '';
+          var anchor = document.getElementById('merchantPayAnchor');
+          var startX = toPt.x + (edge.extendRight || 110);
+          var y = toPt.y;
+          if (anchor && diagramRoot) {
+            var dr = diagramRoot.getBoundingClientRect();
+            var r = anchor.getBoundingClientRect();
+            startX = r.left - dr.left;
+          }
+          return 'M ' + startX + ' ' + y + ' L ' + toPt.x + ' ' + y;
+        }
+
+        function laneOffset(edge) {
+          return edge.kind === 'return' ? 28 : -28;
+        }
+
+        function buildNotifyLPath(fromPt, toPt) {
+          var busY = toPt.y;
+          if (busY < fromPt.y + 10) busY = fromPt.y + 28;
+          return (
+            'M ' +
+            fromPt.x +
+            ' ' +
+            fromPt.y +
+            ' L ' +
+            fromPt.x +
+            ' ' +
+            busY +
+            ' L ' +
+            toPt.x +
+            ' ' +
+            busY
+          );
+        }
+
+        function buildHopOverPath(fromPt, toPt) {
+          var hopY = Math.min(fromPt.y, toPt.y) - 22;
+          return (
+            'M ' +
+            fromPt.x +
+            ' ' +
+            fromPt.y +
+            ' L ' +
+            fromPt.x +
+            ' ' +
+            hopY +
+            ' L ' +
+            toPt.x +
+            ' ' +
+            hopY +
+            ' L ' +
+            toPt.x +
+            ' ' +
+            toPt.y
+          );
+        }
+
+        function buildElbowVHPath(fromPt, toPt) {
+          return (
+            'M ' +
+            fromPt.x +
+            ' ' +
+            fromPt.y +
+            ' L ' +
+            fromPt.x +
+            ' ' +
+            toPt.y +
+            ' L ' +
+            toPt.x +
+            ' ' +
+            toPt.y
+          );
+        }
+
+        function buildStraightLanePath(fromPt, toPt, edge) {
+          var lane = Math.abs(edge.lane != null ? edge.lane : laneOffset(edge));
+          var sign = edge.kind === 'return' ? 1 : -1;
+          var dx = toPt.x - fromPt.x;
+          var dy = toPt.y - fromPt.y;
+          var ox = 0;
+          var oy = 0;
+          if (Math.abs(dx) >= Math.abs(dy)) {
+            oy = sign * lane;
+          } else {
+            ox = sign * lane;
+          }
+          var x1 = fromPt.x + ox;
+          var y1 = fromPt.y + oy;
+          var x2 = toPt.x + ox;
+          var y2 = toPt.y + oy;
+          return 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
+        }
+
+        function buildFundPath(fromPt, toPt) {
+          var y = (fromPt.y + toPt.y) / 2;
+          return (
+            'M ' +
+            fromPt.x +
+            ' ' +
+            fromPt.y +
+            ' L ' +
+            fromPt.x +
+            ' ' +
+            y +
+            ' L ' +
+            toPt.x +
+            ' ' +
+            y +
+            ' L ' +
+            toPt.x +
+            ' ' +
+            toPt.y
+          );
+        }
+
+        function buildLayerDropPath(fromPt, toPt, edge) {
+          var bump = laneOffset(edge);
+          var busY = (fromPt.y + toPt.y) / 2 + bump;
+          return (
+            'M ' +
+            fromPt.x +
+            ' ' +
+            fromPt.y +
+            ' L ' +
+            fromPt.x +
+            ' ' +
+            busY +
+            ' L ' +
+            toPt.x +
+            ' ' +
+            busY +
+            ' L ' +
+            toPt.x +
+            ' ' +
+            toPt.y
+          );
+        }
+
+        function buildSeparatedPath(fromPt, toPt, edge) {
+          var dx = toPt.x - fromPt.x;
+          var dy = toPt.y - fromPt.y;
+          var bump = laneOffset(edge);
+
+          if (Math.abs(dy) < 40 && Math.abs(dx) > 40) {
+            var hy = (fromPt.y + toPt.y) / 2 + bump;
+            return (
+              'M ' +
+              fromPt.x +
+              ' ' +
+              fromPt.y +
+              ' L ' +
+              fromPt.x +
+              ' ' +
+              hy +
+              ' L ' +
+              toPt.x +
+              ' ' +
+              hy +
+              ' L ' +
+              toPt.x +
+              ' ' +
+              toPt.y
+            );
+          }
+
+          if (Math.abs(dx) < 40 && Math.abs(dy) > 40) {
+            var vx = fromPt.x + (edge.kind === 'return' ? -22 : 22);
+            return (
+              'M ' +
+              fromPt.x +
+              ' ' +
+              fromPt.y +
+              ' L ' +
+              vx +
+              ' ' +
+              fromPt.y +
+              ' L ' +
+              vx +
+              ' ' +
+              toPt.y +
+              ' L ' +
+              toPt.x +
+              ' ' +
+              toPt.y
+            );
+          }
+
+          var cornerX = fromPt.x + dx * 0.45;
+          var laneY = fromPt.y + bump;
+          if (dy > 0) laneY = fromPt.y + Math.min(48, dy * 0.35) + bump;
+          else laneY = fromPt.y + Math.max(-48, dy * 0.35) + bump;
+
+          return (
+            'M ' +
+            fromPt.x +
+            ' ' +
+            fromPt.y +
+            ' L ' +
+            cornerX +
+            ' ' +
+            fromPt.y +
+            ' L ' +
+            cornerX +
+            ' ' +
+            laneY +
+            ' L ' +
+            (toPt.x - dx * 0.1) +
+            ' ' +
+            laneY +
+            ' L ' +
+            toPt.x +
+            ' ' +
+            toPt.y
+          );
+        }
+
+        function buildPathD(edge) {
+          if (edge.route === 'from-app-line') {
+            return buildFromAppLinePath(edge);
+          }
+          if (edge.route === 'to-app-line') {
+            return buildAppLinePath(edge);
+          }
+          if (edge.route === 'to-merchant-line') {
+            return buildToMerchantLinePath(edge);
+          }
+          if (edge.route === 'from-merchant-line') {
+            return buildFromMerchantLinePath(edge);
+          }
+          var fromPt = getNodeAnchor(edge.from, edge.fromSide);
+          var toPt = getNodeAnchor(edge.to, edge.toSide);
+          if (!fromPt || !toPt) return '';
+
+          if (edge.route === 'notify-l') {
+            return buildNotifyLPath(fromPt, toPt);
+          }
+          if (edge.route === 'hop-over') {
+            return buildHopOverPath(fromPt, toPt);
+          }
+          if (edge.route === 'elbow-vh') {
+            return buildElbowVHPath(fromPt, toPt);
+          }
+          if (edge.route === 'fund-straight') {
+            return (
+              'M ' + fromPt.x + ' ' + fromPt.y + ' L ' + toPt.x + ' ' + toPt.y
+            );
+          }
+          if (edge.straight) {
+            return buildStraightLanePath(fromPt, toPt, edge);
+          }
+          if (edge.route === 'fund') {
+            return buildFundPath(fromPt, toPt);
+          }
+          if (edge.route === 'layer-drop') {
+            return buildLayerDropPath(fromPt, toPt, edge);
+          }
+          return buildSeparatedPath(fromPt, toPt, edge);
+        }
+
+        function ensureArrowDefs(svg) {
+          var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+          var marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+          marker.setAttribute('id', 'flow-arrow-head');
+          marker.setAttribute('viewBox', '0 0 10 10');
+          marker.setAttribute('refX', '9');
+          marker.setAttribute('refY', '5');
+          marker.setAttribute('markerWidth', '7');
+          marker.setAttribute('markerHeight', '7');
+          marker.setAttribute('orient', 'auto');
+          var head = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          head.setAttribute('d', 'M 0 0 L 10 5 L 0 10 Z');
+          head.setAttribute('fill', '#10b981');
+          marker.appendChild(head);
+          defs.appendChild(marker);
+
+          var markerRed = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+          markerRed.setAttribute('id', 'flow-arrow-head-red');
+          markerRed.setAttribute('viewBox', '0 0 10 10');
+          markerRed.setAttribute('refX', '9');
+          markerRed.setAttribute('refY', '5');
+          markerRed.setAttribute('markerWidth', '7');
+          markerRed.setAttribute('markerHeight', '7');
+          markerRed.setAttribute('orient', 'auto');
+          var headRed = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          headRed.setAttribute('d', 'M 0 0 L 10 5 L 0 10 Z');
+          headRed.setAttribute('fill', '#ef4444');
+          markerRed.appendChild(headRed);
+          defs.appendChild(markerRed);
+
+          svg.appendChild(defs);
+        }
+
+        function buildEdgePaths() {
+          if (currentScene === 'transaction') {
+            buildTxnEdgePaths();
+            if (arrowSvg) arrowSvg.innerHTML = '';
+            edgePathMap = {};
+            return;
+          }
+          if (!arrowSvg || !diagramRoot) return;
+          var w = diagramRoot.clientWidth;
+          var h = diagramRoot.clientHeight;
+          arrowSvg.innerHTML = '';
+          edgePathMap = {};
+          arrowSvg.setAttribute('width', w);
+          arrowSvg.setAttribute('height', h);
+          arrowSvg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+          ensureArrowDefs(arrowSvg);
+
+          getSceneEdges().forEach(function (edge) {
+            var d = buildPathD(edge);
+            if (!d) return;
+
+            var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('id', edge.id);
+            path.setAttribute('class', 'flow-path ' + (edge.kind || 'forward'));
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('fill', 'none');
+            if (edge.kind === 'fund') {
+              path.setAttribute('marker-end', 'url(#flow-arrow-head-red)');
+            } else {
+              path.setAttribute('marker-end', 'url(#flow-arrow-head)');
+            }
+            arrowSvg.appendChild(path);
+            edgePathMap[edge.id] = path;
+          });
+        }
+
+        function scheduleBuildEdgePaths() {
+          requestAnimationFrame(function () {
+            buildEdgePaths();
+          });
+        }
+
+        function clearFlowState() {
+          if (currentScene === 'transaction') {
+            document.querySelectorAll('#txnVFlow .process-node').forEach(function (n) {
+              n.classList.remove('active', 'done');
+              n.classList.add('inactive');
+            });
+            [
+              'txn-node-iss-req',
+              'txn-node-iss-auth',
+              'txn-node-iss-ok',
+              'txn-node-wl-fx',
+              'txn-node-wl-transfer',
+              'txn-node-wl-ramp',
+              'txn-node-wl-rcv-ramp',
+              'txn-node-wl-conv-rcv',
+              'txn-node-lp-fx',
+              'txn-node-lp-conv',
+              'txn-node-lp-conv-done',
+              'txn-node-waas-fraud',
+              'txn-node-waas-make',
+              'txn-node-scheme',
+              'txn-node-scheme-ok',
+              'txn-node-acq',
+              'txn-node-acq-settle',
+            ].forEach(function (id) {
+              var el = document.getElementById(id);
+              if (el) el.innerHTML = '—';
+            });
+            clearTxnAccountDeltas();
+            Object.keys(txnEdgePathMap).forEach(function (id) {
+              var item = txnEdgePathMap[id];
+              if (item && item.classList) {
+                item.classList.remove('active', 'lit');
+              }
+            });
+            if (txnSvg) {
+              txnSvg.querySelectorAll('.txn-edge-label').forEach(function (lbl) {
+                lbl.classList.remove('lit');
+              });
+            }
+            if (txnStatus) {
+              txnStatus.textContent = '';
+              txnStatus.classList.remove('success');
+            }
+            if (mchOrderStatus) mchOrderStatus.textContent = '🟡 Pending';
+            if (mchRevenue) mchRevenue.textContent = formatTxnFiat(0);
+            if (mchSettlement) mchSettlement.textContent = formatTxnFiat(0);
+            if (mchTxnCount) mchTxnCount.textContent = '0';
+            if (txnSuccessBanner) txnSuccessBanner.classList.remove('visible');
+            return;
+          }
+          document.querySelectorAll('.process-node').forEach(function (n) {
+            n.classList.remove('active', 'done');
+          });
+          Object.keys(edgePathMap).forEach(function (id) {
+            var path = edgePathMap[id];
+            if (path) path.classList.remove('active', 'lit');
+          });
+        }
+
+        function activateNodes(ids) {
+          (ids || []).forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) {
+              el.classList.add('active');
+              el.classList.remove('inactive');
+            }
+          });
+        }
+
+        function markNodesDone(ids) {
+          (ids || []).forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) {
+              el.classList.remove('active');
+              el.classList.add('done');
+            }
+          });
+        }
+
+        function activateEdges(ids) {
+          var map = currentScene === 'transaction' ? txnEdgePathMap : edgePathMap;
+          (ids || []).forEach(function (id) {
+            var path = map[id];
+            if (path && path.classList) {
+              path.classList.add('lit', 'active');
+            }
+            var lbl = map[id + '-lbl'];
+            if (lbl && lbl.classList) lbl.classList.add('lit');
+            var dot = map[id + '-dot'];
+            if (dot && dot.classList) dot.classList.add('active');
+          });
+        }
+
+        function pulseCurrentEdges(ids) {
+          var map = currentScene === 'transaction' ? txnEdgePathMap : edgePathMap;
+          Object.keys(map).forEach(function (id) {
+            var path = map[id];
+            if (path && path.classList) path.classList.remove('active');
+          });
+          activateEdges(ids);
+        }
+
+        function clearOnrampQuoteDisplay() {
+          var coin = recvCoin ? recvCoin.value : 'USDT';
+          var fiat = payFiat ? payFiat.value : 'USD';
+          onrampQuote = { pay: 0, fee: 0, total: 0, recv: 0, coin: coin, fiat: fiat };
+          if (payAmount) {
+            payAmount.textContent = '—';
+            payAmount.classList.add('empty');
+          }
+          if (onrampFeeAmt) onrampFeeAmt.textContent = '—';
+          if (onrampTotalAmt) onrampTotalAmt.textContent = '—';
+        }
+
+        function updateTopUpButton() {
+          if (!btnTopUp || demoRunning) return;
+          var recv = parseFloat(recvAmount && recvAmount.value);
+          var ready =
+            recvAmount &&
+            recvAmount.value !== '' &&
+            !isNaN(recv) &&
+            recv > 0 &&
+            onrampQuote.pay > 0;
+          btnTopUp.disabled = !ready;
+        }
+
+        function clearRateQueryVisuals() {
+          onrampRateLit = false;
+          ['node-onramp-wl-fx', 'node-onramp-lp-fx'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('active', 'done');
+          });
+          ['edge-onramp-app-wl', 'edge-onramp-rate', 'edge-onramp-rate-ret'].forEach(function (id) {
+            var path = edgePathMap[id];
+            if (path) path.classList.remove('active', 'lit');
+          });
+        }
+
+        var ONRAMP_RATE_EDGES = ['edge-onramp-app-wl', 'edge-onramp-rate', 'edge-onramp-rate-ret'];
+
+        function persistRateQueryVisuals() {
+          onrampRateLit = true;
+          markNodesDone(['node-onramp-wl-fx', 'node-onramp-lp-fx']);
+          activateEdges(ONRAMP_RATE_EDGES);
+        }
+
+        function persistOnrampBaselineLines() {
+          if (currentScene !== 'onramp' || !onrampRateLit) return;
+          persistRateQueryVisuals();
+        }
+
+        function calcOnrampQuote() {
+          syncOnrampSelectors();
+          var coin = onrampQuote.coin;
+          var fiat = onrampQuote.fiat;
+
+          var recv = parseFloat(recvAmount && recvAmount.value);
+          if (!recvAmount || recvAmount.value === '' || isNaN(recv) || recv <= 0) {
+            clearOnrampQuoteDisplay();
+            updateTopUpButton();
+            return;
+          }
+
+          var rate = ONRAMP_RATES[fiat][coin] || 1;
+          var pay = recv * rate;
+          var fee = Math.max(pay * ONRAMP_FEE_RATE, ONRAMP_FEE_MIN[fiat] || 1.5);
+          var total = pay + fee;
+          onrampQuote = { recv: recv, coin: coin, fiat: fiat, pay: pay, fee: fee, total: total };
+          if (payAmount) {
+            payAmount.textContent = pay.toFixed(2);
+            payAmount.classList.remove('empty');
+          }
+          if (onrampFeeAmt) onrampFeeAmt.textContent = formatMoney(fee, fiat);
+          if (onrampTotalAmt) onrampTotalAmt.textContent = formatMoney(total, fiat);
+          updateTopUpButton();
+        }
+
+        function flashRateQuery(onDone) {
+          if (currentScene !== 'onramp' || demoRunning) {
+            if (onDone) onDone();
+            return;
+          }
+
+          var recv = parseFloat(recvAmount && recvAmount.value);
+          if (!recvAmount || recvAmount.value === '' || isNaN(recv) || recv <= 0) {
+            clearRateQueryVisuals();
+            if (onDone) onDone();
+            return;
+          }
+
+          clearTimeout(rateFlashTimer);
+          buildEdgePaths();
+          activateNodes(['node-onramp-wl-fx', 'node-onramp-lp-fx']);
+          pulseCurrentEdges(ONRAMP_RATE_EDGES);
+          rateFlashTimer = setTimeout(function () {
+            if (!demoRunning && currentScene === 'onramp') {
+              persistRateQueryVisuals();
+            }
+            if (onDone) onDone();
+          }, 700);
+        }
+
+        function renderOnrampChips() {
+          if (chipUsd) {
+            chipUsd.innerHTML = formatChip(onrampBalances.USD, 'USD');
+            bindAllFlagImages(chipUsd);
+          }
+          if (chipSgd) {
+            chipSgd.innerHTML = formatChip(onrampBalances.SGD, 'SGD');
+            bindAllFlagImages(chipSgd);
+          }
+          var cryptoChip = document.getElementById('chipCrypto');
+          if (onrampBalances.USDT > 0 || onrampBalances.USDC > 0) {
+            if (!cryptoChip && onrampBalanceChips) {
+              cryptoChip = document.createElement('span');
+              cryptoChip.className = 'bal-chip crypto';
+              cryptoChip.id = 'chipCrypto';
+              onrampBalanceChips.appendChild(cryptoChip);
+            }
+            if (cryptoChip) {
+              var coin = onrampBalances.USDT > 0 ? 'USDT' : 'USDC';
+              var amt = onrampBalances.USDT > 0 ? onrampBalances.USDT : onrampBalances.USDC;
+              cryptoChip.innerHTML = formatChip(amt, coin);
+              bindAllFlagImages(cryptoChip);
+            }
+          } else if (cryptoChip) {
+            cryptoChip.remove();
+          }
+        }
+
+        function closeOnrampSuccessModal() {
+          if (onrampSuccessOverlay) {
+            onrampSuccessOverlay.classList.remove('open');
+            onrampSuccessOverlay.setAttribute('aria-hidden', 'true');
+          }
+        }
+
+        function showOnrampSuccessModal(q) {
+          if (onrampSuccessAmount) {
+            onrampSuccessAmount.textContent = '+' + q.recv + ' ' + q.coin;
+          }
+          if (onrampSuccessMeta) {
+            onrampSuccessMeta.textContent =
+              'Paid ' + formatMoney(q.total, q.fiat) + ' · Added to your wallet';
+          }
+          if (onrampSuccessOverlay) {
+            onrampSuccessOverlay.classList.add('open');
+            onrampSuccessOverlay.setAttribute('aria-hidden', 'false');
+          }
+        }
+
+        function resetOnrampApp() {
+          onrampBalances = { USD: 10000, SGD: 10000, USDT: 0, USDC: 0 };
+          if (recvAmount) recvAmount.value = '';
+          if (recvCoin) recvCoin.value = 'USDT';
+          if (payFiat) payFiat.value = 'USD';
+          clearOnrampQuoteDisplay();
+          syncOnrampSelectors();
+          renderOnrampChips();
+          if (onrampStatus) {
+            onrampStatus.textContent = '';
+            onrampStatus.classList.remove('success');
+          }
+          closeOnrampSuccessModal();
+          clearRateQueryVisuals();
+          if (valIssuerSettlement) valIssuerSettlement.textContent = 'USD 10,000';
+          if (valLpFiat) valLpFiat.textContent = 'USD 0';
+          if (valLpStable) valLpStable.textContent = '0 USDT';
+          if (valWaasOnchain) valWaasOnchain.textContent = '0 USDT';
+          if (btnTopUp) {
+            btnTopUp.classList.remove('pulse');
+            btnTopUp.textContent = 'Top Up';
+          }
+          updateTopUpButton();
+          if (phoneScreen) phoneScreen.classList.remove('app-running');
+        }
+
+        function renderTxnPayPrefs() {
+          if (!txnPayPrefList) return;
+          txnPayPrefList.innerHTML = '';
+          txnPayPrefs.forEach(function (coin, idx) {
+            var coinLabel = FLAG_PATHS[coin]
+              ? '<span class="fiat-flag-wrap">' + flagImgHtml(coin, 'fiat-flag-sm') + coin + '</span>'
+              : coin;
+            var item = document.createElement('div');
+            item.className = 'pref-item';
+            item.setAttribute('data-coin', coin);
+            item.innerHTML =
+              '<span class="pref-rank">' +
+              (idx + 1) +
+              '</span><span>' +
+              coinLabel +
+              '</span>' +
+              '<span class="pref-order-btns">' +
+              '<button type="button" class="pref-up" data-idx="' +
+              idx +
+              '" aria-label="Move ' +
+              coin +
+              ' up"' +
+              (idx === 0 ? ' disabled' : '') +
+              '>▲</button>' +
+              '<button type="button" class="pref-down" data-idx="' +
+              idx +
+              '" aria-label="Move ' +
+              coin +
+              ' down"' +
+              (idx === txnPayPrefs.length - 1 ? ' disabled' : '') +
+              '>▼</button>' +
+              '</span>';
+            txnPayPrefList.appendChild(item);
+          });
+          bindAllFlagImages(txnPayPrefList);
+          txnPayPrefList.querySelectorAll('.pref-up').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              if (demoRunning) return;
+              var i = parseInt(btn.getAttribute('data-idx'), 10);
+              if (i > 0) {
+                var tmp = txnPayPrefs[i];
+                txnPayPrefs[i] = txnPayPrefs[i - 1];
+                txnPayPrefs[i - 1] = tmp;
+                renderTxnPayPrefs();
+              }
+            });
+          });
+          txnPayPrefList.querySelectorAll('.pref-down').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              if (demoRunning) return;
+              var i = parseInt(btn.getAttribute('data-idx'), 10);
+              if (i < txnPayPrefs.length - 1) {
+                var tmp = txnPayPrefs[i];
+                txnPayPrefs[i] = txnPayPrefs[i + 1];
+                txnPayPrefs[i + 1] = tmp;
+                renderTxnPayPrefs();
+              }
+            });
+          });
+        }
+
+        function updateTxnBalanceDisplay() {
+          if (txnBalanceAmt) txnBalanceAmt.textContent = txnBalance.toFixed(2) + ' USDT';
+          if (txnBalanceEquiv) {
+            txnBalanceEquiv.textContent =
+              '≈ ' + TXN_FIAT + ' ' + (txnBalance * (TXN_FIAT_AMOUNT / TXN_USDT_AMOUNT)).toFixed(2);
+          }
+        }
+
+        function resetTransactionApp(opts) {
+          opts = opts || {};
+          txnBalance = 500;
+          renderTxnPayPrefs();
+          updateTxnBalanceDisplay();
+          if (!opts.keepQr) {
+            closeTxnQrModal();
+            if (txnQrBox) txnQrBox.classList.remove('ready');
+          }
+          if (txnStatus) {
+            txnStatus.textContent = '';
+            txnStatus.classList.remove('success');
+          }
+          if (valTxnIssuer) valTxnIssuer.textContent = formatTxnFiat(0);
+          if (valTxnLpAcct) valTxnLpAcct.textContent = '1000 USDT';
+          if (valTxnLpFiat) valTxnLpFiat.textContent = formatTxnFiat(0);
+          if (valTxnWaasAcct) valTxnWaasAcct.textContent = '500 USDT';
+          if (valTxnAcqAcct) valTxnAcqAcct.textContent = formatTxnFiat(0);
+          clearTxnAccountDeltas();
+          buildTxnEdgePaths();
+          clearFlowState();
+        }
+
+        function resetIssuanceApp() {
+          demoWalletId = randomWalletId();
+          demoCardLast4 = randomLast4();
+          if (cardEmpty) cardEmpty.style.display = '';
+          if (cardSuccess) {
+            cardSuccess.classList.remove('visible');
+            cardSuccess.classList.add('hidden');
+          }
+          if (cardPan) cardPan.textContent = '**** **** **** ----';
+          if (issuanceStatus) {
+            issuanceStatus.textContent = '';
+            issuanceStatus.classList.remove('success');
+          }
+          if (walletIdLine) {
+            walletIdLine.textContent = '';
+            walletIdLine.classList.remove('active');
+          }
+          if (btnApplyCard) {
+            btnApplyCard.disabled = false;
+            btnApplyCard.classList.remove('pulse');
+            btnApplyCard.textContent = 'Apply Card';
+          }
+          if (phoneScreen) phoneScreen.classList.remove('app-running');
+        }
+
+        function showOnrampSuccess() {
+          var q = onrampQuote;
+          onrampBalances[q.fiat] -= q.total;
+          onrampBalances[q.coin] = (onrampBalances[q.coin] || 0) + q.recv;
+          renderOnrampChips();
+          if (onrampStatus) {
+            onrampStatus.textContent = '';
+            onrampStatus.classList.remove('success');
+          }
+          showOnrampSuccessModal(q);
+          if (btnTopUp) {
+            btnTopUp.disabled = true;
+            btnTopUp.classList.remove('pulse');
+            btnTopUp.textContent = 'Top Up Complete';
+          }
+          if (phoneScreen) phoneScreen.classList.remove('app-running');
+          if (valWaasOnchain) valWaasOnchain.textContent = '+' + q.recv + ' ' + q.coin;
+          demoRunning = false;
+          if (btnPause) btnPause.disabled = true;
+          setStepText('Complete — ' + q.recv + ' ' + q.coin + ' onramped via ' + q.fiat);
+        }
+
+        function showIssuanceSuccess() {
+          if (cardEmpty) cardEmpty.style.display = 'none';
+          if (cardSuccess) {
+            cardSuccess.classList.remove('hidden');
+            cardSuccess.classList.add('visible');
+          }
+          if (cardPan) cardPan.textContent = '**** **** **** ' + demoCardLast4;
+          if (issuanceStatus) {
+            issuanceStatus.textContent = '✓ Card issued successfully';
+            issuanceStatus.classList.add('success');
+          }
+          if (walletIdLine) {
+            walletIdLine.textContent = 'Linked wallet: ' + demoWalletId;
+            walletIdLine.classList.add('active');
+          }
+          if (btnApplyCard) {
+            btnApplyCard.disabled = true;
+            btnApplyCard.classList.remove('pulse');
+            btnApplyCard.textContent = 'Card Active';
+          }
+          if (phoneScreen) phoneScreen.classList.remove('app-running');
+          demoRunning = false;
+          if (btnPause) btnPause.disabled = true;
+          setStepText('Complete — Card ' + demoCardLast4 + ' linked to ' + demoWalletId);
+        }
+
+        function applyStepEffects(step) {
+          if (!step) return;
+          if (step.app) {
+            if (step.app.running) {
+              if (phoneScreen) phoneScreen.classList.add('app-running');
+              if (btnApplyCard) {
+                btnApplyCard.disabled = true;
+                btnApplyCard.classList.add('pulse');
+              }
+              if (issuanceStatus) issuanceStatus.textContent = step.app.status || 'Processing…';
+            }
+            if (step.app.success) showIssuanceSuccess();
+          }
+          if (step.onramp) {
+            if (step.onramp.running) {
+              if (phoneScreen) phoneScreen.classList.add('app-running');
+              if (btnTopUp) {
+                btnTopUp.disabled = true;
+                btnTopUp.classList.add('pulse');
+              }
+              if (onrampStatus) onrampStatus.textContent = step.onramp.status || 'Processing…';
+            }
+            if (step.onramp.moveFunds) {
+              var q = onrampQuote;
+              if (valIssuerSettlement) {
+                valIssuerSettlement.textContent = '-' + formatDelta(q.total, q.fiat);
+              }
+              if (valLpFiat) valLpFiat.textContent = '+' + formatDelta(q.pay, q.fiat);
+            }
+            if (step.onramp.creditWaas) {
+              var q2 = onrampQuote;
+              if (valLpStable) valLpStable.textContent = '-' + q2.recv + ' ' + q2.coin;
+              if (valWaasOnchain) valWaasOnchain.textContent = '+' + q2.recv + ' ' + q2.coin;
+            }
+            if (step.onramp.success) showOnrampSuccess();
+          }
+          if (step.walletId && walletIdLine) {
+            walletIdLine.textContent = 'Recording wallet ID…';
+          }
+          if (step.txn) {
+            if (step.txn.s1) {
+              if (txnStatus) {
+                txnStatus.textContent = 'Payment initiated — ' + formatTxnFiat(TXN_FIAT_AMOUNT) + ' order';
+                txnStatus.classList.add('success');
+              }
+              if (mchOrderStatus) mchOrderStatus.textContent = '🟡 Processing';
+            }
+            if (step.txn.s2) {
+              setTxnNodeText('txn-node-acq', 'Receive Payment<br />' + formatTxnFiat(TXN_FIAT_AMOUNT));
+              setTxnNodeText('txn-node-scheme', 'Route Payment<br />' + formatTxnFiat(TXN_FIAT_AMOUNT));
+              setTxnNodeText('txn-node-iss-req', 'Auth Request<br />Received');
+            }
+            if (step.txn.s3) {
+              setTxnNodeText('txn-node-iss-auth', 'Authorization<br />Check');
+              setTxnNodeText('txn-node-wl-fx', 'Awaiting<br />Auth Result');
+            }
+            if (step.txn.s4) {
+              setTxnNodeText('txn-node-wl-fx', 'FX Rate<br />Inquiry');
+              setTxnNodeText('txn-node-lp-fx', 'Provide<br />FX Rate');
+            }
+            if (step.txn.s5) {
+              setTxnNodeText('txn-node-wl-transfer', 'Asset<br />Transfer');
+              setTxnNodeText('txn-node-waas-fraud', 'Fraud<br />Check');
+            }
+            if (step.txn.s6) {
+              setTxnNodeText('txn-node-waas-fraud', 'Fraud Check ✓');
+              setTxnNodeText('txn-node-waas-make', 'Make the<br />Transfer');
+              setTxnNodeText('txn-node-wl-ramp', 'Ramp Off');
+            }
+            if (step.txn.s7) {
+              setTxnNodeText('txn-node-wl-rcv-ramp', 'Receive<br />Ramp Off');
+              setTxnNodeText('txn-node-lp-conv', 'Receive<br />Off-ramp');
+            }
+            if (step.txn.s8) {
+              setTxnNodeText('txn-node-lp-conv-done', 'Conversion<br />Complete');
+              setTxnNodeText('txn-node-wl-conv-rcv', 'Receive<br />Conversion');
+            }
+            if (step.txn.s9) {
+              setTxnNodeText('txn-node-wl-conv-rcv', 'Fund In<br />Notification');
+              setTxnNodeText('txn-node-iss-ok', 'Approve<br />Transaction');
+            }
+            if (step.txn.s10) {
+              setTxnNodeText('txn-node-iss-ok', 'Payment<br />Success ✓');
+              setTxnNodeText('txn-node-scheme-ok', 'Post Auth<br />Success');
+              setTxnNodeText('txn-node-acq-settle', 'Settle<br />Merchant');
+              if (txnStatus) {
+                txnStatus.textContent = 'Payment Success ✓';
+                txnStatus.classList.add('success');
+              }
+            }
+            if (step.txn.fund1) {
+              showTxnAccountDelta('deltaTxnWaasAcct', '-' + TXN_USDT_AMOUNT + ' USDT', 'neg');
+              showTxnAccountDelta('deltaTxnLpAcct', '+' + TXN_USDT_AMOUNT + ' USDT', 'pos');
+              showTxnAccountDelta('deltaTxnLpFiat', formatTxnFiatDelta(TXN_FIAT_AMOUNT), 'pos');
+              if (valTxnWaasAcct) valTxnWaasAcct.textContent = '399 USDT';
+              if (valTxnLpAcct) valTxnLpAcct.textContent = '1101 USDT';
+              if (valTxnLpFiat) valTxnLpFiat.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
+              txnBalance = 399;
+              updateTxnBalanceDisplay();
+            }
+            if (step.txn.fund2) {
+              showTxnAccountDelta('deltaTxnLpFiat', formatTxnFiatDelta(-TXN_FIAT_AMOUNT), 'neg');
+              showTxnAccountDelta('deltaTxnIssuer', formatTxnFiatDelta(TXN_FIAT_AMOUNT), 'pos');
+              if (valTxnLpAcct) valTxnLpAcct.textContent = '1000 USDT';
+              if (valTxnLpFiat) valTxnLpFiat.textContent = formatTxnFiat(0);
+              if (valTxnIssuer) valTxnIssuer.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
+            }
+            if (step.txn.fund3) {
+              showTxnAccountDeltaHtml(
+                'deltaTxnIssuer',
+                '<span class="pos">' +
+                  formatTxnFiatDelta(TXN_FIAT_AMOUNT) +
+                  '</span><span class="neg">' +
+                  formatTxnFiatDelta(-TXN_FIAT_AMOUNT) +
+                  '</span>'
+              );
+              showTxnAccountDelta('deltaTxnAcqAcct', formatTxnFiatDelta(TXN_FIAT_AMOUNT), 'pos');
+              if (valTxnIssuer) valTxnIssuer.textContent = formatTxnFiat(0);
+              if (valTxnAcqAcct) valTxnAcqAcct.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
+              if (mchRevenue) mchRevenue.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
+              if (mchSettlement) mchSettlement.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
+              if (mchTxnCount) mchTxnCount.textContent = '1';
+              if (mchOrderStatus) mchOrderStatus.textContent = '✅ Paid';
+            }
+            if (step.txn.complete) {
+              if (txnSuccessBanner) txnSuccessBanner.classList.add('visible');
+              demoRunning = false;
+              if (btnPause) btnPause.disabled = true;
+              setStepText(
+                'Complete — ' + formatTxnFiat(TXN_FIAT_AMOUNT) + ' paid, ' + TXN_USDT_AMOUNT + ' USDT deducted'
+              );
+            }
+          }
+        }
+
+        function runDemoStep(index) {
+          if (demoPaused) return;
+
+          if (currentScene !== 'transaction' && !Object.keys(edgePathMap).length) {
+            buildEdgePaths();
+          }
+
+          var steps = getSceneSteps();
+          var step = steps[index];
+          if (!step) {
+            demoRunning = false;
+            if (btnPause) btnPause.disabled = true;
+            return;
+          }
+
+          demoIndex = index;
+          var stepNum = index + 1;
+          setStepText('Step ' + stepNum + ' / ' + steps.length + ' — ' + step.label);
+
+          if (step.markDone) markNodesDone(step.markDone);
+
+          activateNodes(step.nodes);
+          applyStepEffects(step);
+
+          if (currentScene === 'transaction') {
+            buildTxnEdgePaths();
+          }
+
+          pulseCurrentEdges(step.edges || []);
+
+          if (step.delay === 0) {
+            demoRunning = false;
+            if (btnPause) btnPause.disabled = true;
+            return;
+          }
+
+          demoTimer = setTimeout(function () {
+            if (!demoPaused) runDemoStep(index + 1);
+          }, step.delay);
+        }
+
+        function startDemo(opts) {
+          opts = opts || {};
+          if (
+            currentScene !== 'card-issuance' &&
+            currentScene !== 'onramp' &&
+            currentScene !== 'transaction'
+          )
+            return;
+          if (demoRunning) return;
+
+          clearTimeout(txnQrAutoStartTimer);
+          txnQrAutoStartTimer = null;
+          clearTimeout(demoTimer);
+          clearTimeout(rateFlashTimer);
+          buildEdgePaths();
+          clearFlowState();
+
+          if (currentScene === 'card-issuance') {
+            resetIssuanceApp();
+            demoWalletId = randomWalletId();
+            demoCardLast4 = randomLast4();
+          } else if (currentScene === 'onramp') {
+            calcOnrampQuote();
+            if (onrampQuote.recv <= 0) {
+              setStepText('Enter a receive amount first');
+              return;
+            }
+            if (!onrampRateLit) {
+              persistRateQueryVisuals();
+            }
+            if (onrampBalances[onrampQuote.fiat] < onrampQuote.total) {
+              setStepText('Insufficient ' + onrampQuote.fiat + ' balance');
+              return;
+            }
+          } else if (currentScene === 'transaction') {
+            txnDemoStartTime = Date.now();
+            resetTransactionApp({ keepQr: !!opts.keepQr });
+          }
+
+          demoRunning = true;
+          demoPaused = false;
+          demoIndex = 0;
+          if (btnPause) btnPause.disabled = false;
+
+          if (currentScene === 'onramp') {
+            persistOnrampBaselineLines();
+          }
+
+          runDemoStep(0);
+        }
+
+        function pauseDemo() {
+          if (!demoRunning) return;
+          demoPaused = !demoPaused;
+          btnPause.textContent = demoPaused ? '▶ Resume' : '⏸ Pause';
+          if (demoPaused) {
+            clearTimeout(demoTimer);
+          } else {
+            runDemoStep(demoIndex + 1);
+          }
+        }
+
+        function resetDemo() {
+          clearTimeout(txnQrAutoStartTimer);
+          txnQrAutoStartTimer = null;
+          clearTimeout(demoTimer);
+          clearTimeout(rateFlashTimer);
+          demoRunning = false;
+          demoPaused = false;
+          demoIndex = 0;
+          if (btnPause) {
+            btnPause.disabled = true;
+            btnPause.textContent = '⏸ Pause';
+          }
+          clearFlowState();
+          buildEdgePaths();
+          if (currentScene === 'card-issuance') resetIssuanceApp();
+          else if (currentScene === 'onramp') {
+            resetOnrampApp();
+            persistOnrampBaselineLines();
+          } else if (currentScene === 'transaction') {
+            resetTransactionApp();
+          }
+          setStepText(STEP_IDLE[currentScene] || 'Step 0');
+        }
+
+        function switchScene(scene) {
+          currentScene = scene;
+          document.body.setAttribute('data-scene', scene);
+
+          buttons.forEach(function (b) {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+          });
+
+          var activeBtn = document.querySelector('.scene-btn[data-scene="' + scene + '"]');
+          if (activeBtn) {
+            activeBtn.classList.add('active');
+            activeBtn.setAttribute('aria-pressed', 'true');
+          }
+
+          if (labelEl && SCENE_LABELS[scene]) labelEl.textContent = SCENE_LABELS[scene];
+
+          document.querySelectorAll('.app-panel').forEach(function (panel) {
+            panel.classList.toggle('visible', panel.getAttribute('data-panel') === scene);
+          });
+
+          resetDemo();
+        }
+
+        buttons.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            switchScene(btn.getAttribute('data-scene'));
+          });
+        });
+
+        if (btnApplyCard) btnApplyCard.addEventListener('click', startDemo);
+        if (btnTopUp) btnTopUp.addEventListener('click', startDemo);
+        if (btnGenQr) btnGenQr.addEventListener('click', showTxnPayNowQr);
+        if (qrModalClose) qrModalClose.addEventListener('click', closeTxnQrModal);
+        if (qrModalOverlay) {
+          qrModalOverlay.addEventListener('click', function (e) {
+            if (e.target === qrModalOverlay) closeTxnQrModal();
+          });
+        }
+        if (onrampSuccessClose) onrampSuccessClose.addEventListener('click', closeOnrampSuccessModal);
+        if (onrampSuccessOverlay) {
+          onrampSuccessOverlay.addEventListener('click', function (e) {
+            if (e.target === onrampSuccessOverlay) closeOnrampSuccessModal();
+          });
+        }
+        if (btnStart) btnStart.addEventListener('click', startDemo);
+        if (btnPause) btnPause.addEventListener('click', pauseDemo);
+        if (btnReset) btnReset.addEventListener('click', resetDemo);
+
+        function onOnrampInputChange() {
+          syncOnrampSelectors();
+          var recv = parseFloat(recvAmount && recvAmount.value);
+          if (!recvAmount || recvAmount.value === '' || isNaN(recv) || recv <= 0) {
+            clearOnrampQuoteDisplay();
+            clearRateQueryVisuals();
+            updateTopUpButton();
+            return;
+          }
+
+          calcOnrampQuote();
+
+          if (!onrampRateLit) {
+            flashRateQuery();
+          }
+
+          updateTopUpButton();
+        }
+
+        if (recvAmount) {
+          recvAmount.addEventListener('input', onOnrampInputChange);
+          recvAmount.addEventListener('change', onOnrampInputChange);
+        }
+        if (recvCoin) recvCoin.addEventListener('change', onOnrampInputChange);
+        if (payFiat) payFiat.addEventListener('change', onOnrampInputChange);
+
+        function scheduleOnrampPaths() {
+          scheduleBuildEdgePaths();
+          if (currentScene === 'onramp' && !demoRunning) {
+            requestAnimationFrame(function () {
+              persistOnrampBaselineLines();
+            });
+          }
+        }
+
+        scheduleBuildEdgePaths();
+        window.addEventListener('resize', function () {
+          if (
+            currentScene === 'card-issuance' ||
+            currentScene === 'onramp' ||
+            currentScene === 'transaction'
+          ) {
+            scheduleBuildEdgePaths();
+          }
+        });
+        window.addEventListener('load', function () {
+          scheduleBuildEdgePaths();
+        });
+
+        bindAllFlagImages(document);
+        resetIssuanceApp();
+        resetOnrampApp();
+        resetTransactionApp();
+      })();
+    </script>
+  </body>
+</html>
