@@ -1208,6 +1208,13 @@
         gap: 8px;
       }
 
+      .exchange-fiat {
+        flex-shrink: 0;
+        font-size: 12px;
+        font-weight: 700;
+        color: #e2e8f0;
+      }
+
       .coin-select {
         display: flex;
         align-items: center;
@@ -1564,50 +1571,6 @@
         font-size: 11px;
         color: #94a3b8;
         margin-bottom: 8px;
-      }
-
-      .qr-box {
-        width: 130px;
-        height: 130px;
-        margin: 0 auto 12px;
-        border: 2px dashed #334155;
-        border-radius: 12px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        font-size: 10px;
-        color: #64748b;
-        text-align: center;
-        padding: 8px;
-        transition: border-color 0.3s, background 0.3s;
-      }
-
-      .qr-box.ready {
-        border-color: #10b981;
-        border-style: solid;
-        background: #0f172a;
-        color: #6ee7b7;
-      }
-
-      .qr-pattern {
-        display: none;
-        width: 72px;
-        height: 72px;
-        background:
-          linear-gradient(90deg, #10b981 2px, transparent 2px) 0 0 / 8px 8px,
-          linear-gradient(#10b981 2px, transparent 2px) 0 0 / 8px 8px;
-        border: 3px solid #10b981;
-        border-radius: 4px;
-      }
-
-      .qr-box.ready .qr-pattern {
-        display: block;
-      }
-
-      .qr-box.ready .qr-placeholder-text {
-        display: none;
       }
 
       .fiat-flag {
@@ -2060,9 +2023,29 @@
                     <div class="amount" id="txnBalanceAmt">500.00 USDT</div>
                     <div class="equiv" id="txnBalanceEquiv">≈ SGD 495.00</div>
                   </div>
-                  <div class="qr-box" id="txnQrBox">
-                    <div class="qr-pattern" aria-hidden="true"></div>
-                    <span class="qr-placeholder-text">Tap Generate QR Code</span>
+                  <div class="exchange-box">
+                    <div class="box-label">Payment Amount</div>
+                    <div class="exchange-row">
+                      <span class="fiat-flag-wrap exchange-fiat" aria-label="SGD">
+                        <img
+                          class="fiat-flag"
+                          src="assets/flags/sg.png"
+                          alt="SG"
+                          data-flag-fiat="SGD"
+                        />
+                        <span>SGD</span>
+                      </span>
+                      <input
+                        class="exchange-input"
+                        id="txnPayAmount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value=""
+                        placeholder="0.00"
+                        inputmode="decimal"
+                      />
+                    </div>
                   </div>
                   <div class="pay-pref">
                     <div class="label">Payment preference (drag order):</div>
@@ -2358,6 +2341,11 @@
                 </div>
 
                 <div class="txn-v-flow" id="txnVFlow">
+                  <div class="txn-panel-legend" aria-label="Flow legend">
+                    <div class="leg-row"><span class="leg-info-solid"></span> Send</div>
+                    <div class="leg-row"><span class="leg-info-dash"></span> Return</div>
+                    <div class="leg-row"><span class="leg-fund"></span> Fund</div>
+                  </div>
                   <svg class="txn-svg" id="txnSvg" aria-hidden="true"></svg>
                   <div class="txn-app-anchor" id="txnAppAnchor" aria-hidden="true"></div>
                   <div class="txn-mch-fund-anchor" id="txnMchFundAnchor" aria-hidden="true"></div>
@@ -2666,7 +2654,7 @@
                     <tbody>
                       <tr id="mchOrderRow">
                         <td>#ORD-001</td>
-                        <td>$100.00 SGD</td>
+                        <td id="mchOrderAmount">$100.00 SGD</td>
                         <td id="mchOrderStatus">🟡 Pending</td>
                         <td>John S.</td>
                       </tr>
@@ -2700,7 +2688,7 @@
         var STEP_IDLE = {
           'card-issuance': 'Step 0 — Tap Apply Card in Customer View',
           onramp: 'Step 0 — Enter receive amount, then Top Up',
-          transaction: 'Step 0 — Press ▶ Start to run transaction flow',
+          transaction: 'Step 0 — Enter amount (SGD), then Generate QR Code',
         };
 
         var ONRAMP_RATES = {
@@ -3129,6 +3117,9 @@
         var TXN_FIAT = 'SGD';
         var TXN_FIAT_AMOUNT = 100;
         var TXN_USDT_AMOUNT = 101;
+        var TXN_USDT_PER_FIAT = 1.01;
+        var TXN_WAAS_START = 500;
+        var TXN_LP_USDT_START = 1000;
         var txnBalance = 500;
         var txnPayPrefs = ['USDT', 'SGD', 'USD'];
 
@@ -3138,6 +3129,53 @@
 
         function formatTxnFiatDelta(amount) {
           return (amount >= 0 ? '+' : '-') + '$' + Math.abs(amount).toFixed(2) + ' ' + TXN_FIAT;
+        }
+
+        function calcTxnUsdtAmount(fiatAmount) {
+          return Math.round(fiatAmount * TXN_USDT_PER_FIAT * 100) / 100;
+        }
+
+        function readTxnPayAmountInput() {
+          if (!txnPayAmount || txnPayAmount.value === '') return null;
+          var v = parseFloat(txnPayAmount.value);
+          if (isNaN(v) || v <= 0) return null;
+          return Math.round(v * 100) / 100;
+        }
+
+        function refreshTxnFlowCopy() {
+          TRANSACTION_STEPS.forEach(function (step) {
+            if (step.txn && step.txn.fund1) {
+              step.label = 'Fund: WAAS → LP (-' + TXN_USDT_AMOUNT + ' USDT)';
+            }
+            if (step.txn && step.txn.fund2) {
+              step.label = 'Fund: LP → Issuer (+' + formatTxnFiatDelta(TXN_FIAT_AMOUNT) + ' fiat)';
+            }
+          });
+          TRANSACTION_EDGES.forEach(function (edge) {
+            if (edge.id === 'te-i4u') {
+              edge.label = '1 USDT ≈ ' + (TXN_FIAT_AMOUNT / TXN_USDT_AMOUNT).toFixed(2) + ' ' + TXN_FIAT;
+            }
+            if (edge.id === 'te-i5') {
+              edge.label = TXN_USDT_AMOUNT + ' USDT Transfer';
+            }
+          });
+          if (txnSuccessBanner) {
+            txnSuccessBanner.textContent =
+              '✅ Transaction Complete | ' +
+              formatTxnFiat(TXN_FIAT_AMOUNT) +
+              ' paid | ' +
+              TXN_USDT_AMOUNT +
+              ' USDT deducted | 3.2s';
+          }
+          if (mchOrderAmount) mchOrderAmount.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
+          if (currentScene === 'transaction') buildTxnEdgePaths();
+        }
+
+        function applyTxnPaymentAmount(sgdAmount) {
+          TXN_FIAT_AMOUNT = sgdAmount;
+          TXN_USDT_AMOUNT = calcTxnUsdtAmount(sgdAmount);
+          PAYNOW_DEMO.amount = sgdAmount.toFixed(2);
+          refreshTxnFlowCopy();
         }
         var txnEdgePathMap = {};
         var txnDemoStartTime = 0;
@@ -3599,7 +3637,8 @@
         var valLpStable = document.getElementById('valLpStable');
         var valWaasOnchain = document.getElementById('valWaasOnchain');
         var btnGenQr = document.getElementById('btnGenQr');
-        var txnQrBox = document.getElementById('txnQrBox');
+        var txnPayAmount = document.getElementById('txnPayAmount');
+        var mchOrderAmount = document.getElementById('mchOrderAmount');
         var qrModalOverlay = document.getElementById('qrModalOverlay');
         var qrModalClose = document.getElementById('qrModalClose');
         var txnQrHost = document.getElementById('txnQrHost');
@@ -3833,6 +3872,15 @@
 
         function showTxnPayNowQr() {
           if (demoRunning) return;
+          var payAmount = readTxnPayAmountInput();
+          if (!payAmount) {
+            if (txnStatus) {
+              txnStatus.textContent = 'Enter payment amount (SGD) first';
+              txnStatus.classList.remove('success');
+            }
+            return;
+          }
+          applyTxnPaymentAmount(payAmount);
           if (!txnQrHost || typeof QRCode === 'undefined') {
             if (txnStatus) txnStatus.textContent = 'QR library not loaded';
             return;
@@ -3857,7 +3905,6 @@
             if (txnStatus) txnStatus.textContent = 'QR generation failed';
             return;
           }
-          if (txnQrBox) txnQrBox.classList.add('ready');
           if (qrModalOverlay) {
             qrModalOverlay.classList.add('open');
             qrModalOverlay.setAttribute('aria-hidden', 'false');
@@ -3963,7 +4010,7 @@
 
         function syncTxnAppAnchor() {
           if (!txnAppAnchor || !txnVFlow) return;
-          var target = document.getElementById('txnStatus') || document.getElementById('txnQrBox');
+          var target = document.getElementById('txnStatus');
           if (!target) return;
           var tr = txnVFlow.getBoundingClientRect();
           var ar = target.getBoundingClientRect();
@@ -4786,6 +4833,7 @@
               txnStatus.classList.remove('success');
             }
             if (mchOrderStatus) mchOrderStatus.textContent = '🟡 Pending';
+            if (mchOrderAmount) mchOrderAmount.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
             if (mchRevenue) mchRevenue.textContent = formatTxnFiat(0);
             if (mchSettlement) mchSettlement.textContent = formatTxnFiat(0);
             if (mchTxnCount) mchTxnCount.textContent = '0';
@@ -5095,7 +5143,7 @@
           updateTxnBalanceDisplay();
           if (!opts.keepQr) {
             closeTxnQrModal();
-            if (txnQrBox) txnQrBox.classList.remove('ready');
+            if (txnPayAmount) txnPayAmount.value = '';
           }
           if (txnStatus) {
             txnStatus.textContent = '';
@@ -5278,16 +5326,16 @@
               showTxnAccountDelta('deltaTxnWaasAcct', '-' + TXN_USDT_AMOUNT + ' USDT', 'neg');
               showTxnAccountDelta('deltaTxnLpAcct', '+' + TXN_USDT_AMOUNT + ' USDT', 'pos');
               showTxnAccountDelta('deltaTxnLpFiat', formatTxnFiatDelta(TXN_FIAT_AMOUNT), 'pos');
-              if (valTxnWaasAcct) valTxnWaasAcct.textContent = '399 USDT';
-              if (valTxnLpAcct) valTxnLpAcct.textContent = '1101 USDT';
+              txnBalance = TXN_WAAS_START - TXN_USDT_AMOUNT;
+              if (valTxnWaasAcct) valTxnWaasAcct.textContent = txnBalance + ' USDT';
+              if (valTxnLpAcct) valTxnLpAcct.textContent = TXN_LP_USDT_START + TXN_USDT_AMOUNT + ' USDT';
               if (valTxnLpFiat) valTxnLpFiat.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
-              txnBalance = 399;
               updateTxnBalanceDisplay();
             }
             if (step.txn.fund2) {
               showTxnAccountDelta('deltaTxnLpFiat', formatTxnFiatDelta(-TXN_FIAT_AMOUNT), 'neg');
               showTxnAccountDelta('deltaTxnIssuer', formatTxnFiatDelta(TXN_FIAT_AMOUNT), 'pos');
-              if (valTxnLpAcct) valTxnLpAcct.textContent = '1000 USDT';
+              if (valTxnLpAcct) valTxnLpAcct.textContent = TXN_LP_USDT_START + ' USDT';
               if (valTxnLpFiat) valTxnLpFiat.textContent = formatTxnFiat(0);
               if (valTxnIssuer) valTxnIssuer.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
             }
@@ -5395,6 +5443,14 @@
               return;
             }
           } else if (currentScene === 'transaction') {
+            if (!opts.keepQr) {
+              var txnAmt = readTxnPayAmountInput();
+              if (!txnAmt) {
+                setStepText('Enter payment amount (SGD) first');
+                return;
+              }
+              applyTxnPaymentAmount(txnAmt);
+            }
             txnDemoStartTime = Date.now();
             resetTransactionApp({ keepQr: !!opts.keepQr });
           }
