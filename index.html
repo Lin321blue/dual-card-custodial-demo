@@ -204,6 +204,11 @@
         max-width: 22%;
       }
 
+      body[data-scene='app-checkout'] #col-mobile {
+        flex: 0 0 26%;
+        max-width: 26%;
+      }
+
       #col-flow {
         flex: 1;
         min-width: 0;
@@ -840,6 +845,20 @@
         display: none;
       }
 
+      body[data-scene='app-checkout'] .issuance-matrix,
+      body[data-scene='app-checkout'] .onramp-matrix,
+      body[data-scene='app-checkout'] .lanes-extra {
+        display: none;
+      }
+
+      body[data-scene='app-checkout'] .txn-v-flow {
+        display: flex;
+      }
+
+      body[data-scene='app-checkout'] .greeting {
+        display: none;
+      }
+
       /* ========== TRANSACTION: VERTICAL SWIMLANES ========== */
       .txn-v-flow {
         position: relative;
@@ -1383,14 +1402,19 @@
       }
 
       .phone-shell {
-        width: 260px;
-        height: 520px;
+        width: 280px;
+        height: 580px;
         background: #1e293b;
         border-radius: 36px;
         padding: 12px;
         position: relative;
         flex-shrink: 0;
         z-index: 6;
+      }
+
+      body[data-scene='app-checkout'] .phone-shell {
+        width: 300px;
+        height: 660px;
       }
 
       .phone-notch {
@@ -1418,10 +1442,216 @@
       }
 
       #appPanelTransaction.visible,
-      #appPanelOnramp.visible {
+      #appPanelOnramp.visible,
+      #appPanelAppCheckout.visible {
         position: relative;
         flex: 1;
         min-height: 0;
+      }
+
+      /* Amazon-style in-app checkout (App Checkout scene) */
+      .checkout-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin: 0 -4px;
+        padding: 0 4px 8px;
+        scrollbar-width: thin;
+      }
+
+      .checkout-product {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 10px;
+      }
+
+      .checkout-product-img {
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        background: linear-gradient(145deg, #334155 0%, #1e293b 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+
+      .checkout-product-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .checkout-product-name {
+        font-size: 11px;
+        font-weight: 600;
+        color: #f1f5f9;
+        line-height: 1.35;
+        margin-bottom: 3px;
+      }
+
+      .checkout-product-meta {
+        font-size: 10px;
+        color: #94a3b8;
+      }
+
+      .checkout-product-price {
+        margin-top: 4px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fcd34d;
+      }
+
+      .checkout-section {
+        padding: 10px 10px 9px;
+        margin-bottom: 8px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 10px;
+      }
+
+      .checkout-section-label {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: #64748b;
+        margin-bottom: 6px;
+      }
+
+      .checkout-section-value {
+        font-size: 11px;
+        font-weight: 600;
+        color: #e2e8f0;
+        line-height: 1.4;
+      }
+
+      .checkout-section-sub {
+        margin-top: 3px;
+        font-size: 10px;
+        color: #94a3b8;
+      }
+
+      .checkout-pay-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .checkout-card-name {
+        font-size: 11px;
+        font-weight: 600;
+        color: #e2e8f0;
+      }
+
+      .checkout-card-pan {
+        font-size: 11px;
+        color: #94a3b8;
+      }
+
+      .checkout-visa-badge {
+        margin-left: auto;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #1a1f71;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+      }
+
+      .checkout-crypto-hint {
+        margin-top: 5px;
+        font-size: 10px;
+        color: #6ee7b7;
+      }
+
+      .checkout-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: #94a3b8;
+        padding: 3px 0;
+      }
+
+      .checkout-line.total {
+        margin-top: 4px;
+        padding-top: 7px;
+        border-top: 1px solid #334155;
+        font-size: 12px;
+        font-weight: 700;
+        color: #f8fafc;
+      }
+
+      .checkout-line.total span:last-child {
+        color: #fcd34d;
+      }
+
+      .checkout-line.usdt-est {
+        margin-top: 5px;
+        font-size: 10px;
+        color: #94a3b8;
+      }
+
+      .checkout-line.usdt-est span:last-child {
+        color: #6ee7b7;
+        font-weight: 600;
+        text-align: right;
+        line-height: 1.35;
+      }
+
+      .checkout-place-btn {
+        width: 100%;
+        margin-top: 6px;
+        padding: 11px 12px;
+        border: none;
+        border-radius: 22px;
+        background: linear-gradient(180deg, #ffd814 0%, #f7ca00 100%);
+        color: #111827;
+        font-size: 13px;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(247, 202, 0, 0.35);
+        flex-shrink: 0;
+      }
+
+      .checkout-place-btn:hover:not(:disabled) {
+        background: linear-gradient(180deg, #f7ca00 0%, #e6b800 100%);
+      }
+
+      .checkout-place-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
+      .checkout-place-btn.pulse {
+        animation: btn-pulse 1.2s ease-in-out infinite;
+      }
+
+      .checkout-status {
+        margin-top: 8px;
+        font-size: 10px;
+        color: #94a3b8;
+        text-align: center;
+        min-height: 14px;
+      }
+
+      .checkout-status.success {
+        color: #6ee7b7;
+      }
+
+      .matrix-header.scheme-visa {
+        color: #f8fafc;
+        font-weight: 800;
+        letter-spacing: 0.05em;
       }
 
       .onramp-success-icon {
@@ -1926,18 +2156,6 @@
         <div class="header-right">
           <div class="flow-legend" aria-label="Flow diagram legend">
             <div class="legend-item">
-              <span class="legend-line solid-green"></span>
-              Send
-            </div>
-            <div class="legend-item">
-              <span class="legend-line dashed-green"></span>
-              Return
-            </div>
-            <div class="legend-item">
-              <span class="legend-line solid-red"></span>
-              Fund
-            </div>
-            <div class="legend-item">
               <span class="legend-dot"></span>
               Active
             </div>
@@ -1959,7 +2177,13 @@
               <div class="icon-box">
                 <img src="icons/transaction.png" alt="" onerror="this.style.display='none'" />
               </div>
-              <span class="scene-label">Transaction</span>
+              <span class="scene-label">QR Transaction</span>
+            </button>
+            <button type="button" class="scene-btn" data-scene="app-checkout" aria-pressed="false">
+              <div class="icon-box">
+                <img src="icons/transaction.png" alt="" onerror="this.style.display='none'" />
+              </div>
+              <span class="scene-label">Online Transaction</span>
             </button>
           </div>
         </div>
@@ -1988,7 +2212,7 @@
               <div class="phone-screen" id="phoneScreen">
                 <div class="app-topbar">
                   <span class="back">← Back</span>
-                  <span class="title">Demo Bank</span>
+                  <span class="title" id="phoneTitle">Demo Bank</span>
                   <span class="spacer"></span>
                 </div>
 
@@ -2021,7 +2245,7 @@
                   <div class="balance-section">
                     <div class="label">Crypto Balance</div>
                     <div class="amount" id="txnBalanceAmt">500.00 USDT</div>
-                    <div class="equiv" id="txnBalanceEquiv">≈ SGD 495.00</div>
+                    <div class="equiv" id="txnBalanceEquiv">≈ SGD 675.00</div>
                   </div>
                   <div class="exchange-box">
                     <div class="box-label">Payment Amount</div>
@@ -2079,6 +2303,55 @@
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <!-- App Checkout scene (Amazon-style in-app payment) -->
+                <div class="app-panel" id="appPanelAppCheckout" data-panel="app-checkout">
+                  <div class="checkout-scroll">
+                    <div class="checkout-product">
+                      <div class="checkout-product-img" aria-hidden="true">🎧</div>
+                      <div class="checkout-product-info">
+                        <div class="checkout-product-name">Demo Store — Wireless Earbuds Pro</div>
+                        <div class="checkout-product-meta">Sold by Demo Store · Prime eligible</div>
+                        <div class="checkout-product-price" id="appCheckoutPrice">SGD 100.00</div>
+                      </div>
+                    </div>
+                    <div class="checkout-section">
+                      <div class="checkout-section-label">Deliver to</div>
+                      <div class="checkout-section-value">John · 123 Orchard Road</div>
+                      <div class="checkout-section-sub">Singapore 238858</div>
+                    </div>
+                    <div class="checkout-section">
+                      <div class="checkout-section-label">Pay with</div>
+                      <div class="checkout-pay-row">
+                        <span class="checkout-card-name">Demo Bank Crypto</span>
+                        <span class="checkout-card-pan">•••• 4821</span>
+                        <span class="checkout-visa-badge">VISA</span>
+                      </div>
+                      <div class="checkout-crypto-hint" id="appCheckoutBalanceHint">500.00 USDT available</div>
+                    </div>
+                    <div class="checkout-section">
+                      <div class="checkout-section-label">Order Summary</div>
+                      <div class="checkout-line">
+                        <span>Items (1)</span>
+                        <span id="appCheckoutSubtotal">SGD 100.00</span>
+                      </div>
+                      <div class="checkout-line">
+                        <span>Shipping</span>
+                        <span>SGD 0.00</span>
+                      </div>
+                      <div class="checkout-line total">
+                        <span>Order Total</span>
+                        <span id="appCheckoutTotal">SGD 100.00</span>
+                      </div>
+                      <div class="checkout-line usdt-est">
+                        <span>Est. USDT debit</span>
+                        <span id="appCheckoutUsdtEst">74.81 USDT · fee 0.74</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" class="checkout-place-btn" id="btnPlaceOrder">Place your order</button>
+                  <p class="checkout-status" id="appCheckoutStatus"></p>
                 </div>
 
                 <!-- Fiat Onramp scene -->
@@ -2341,11 +2614,6 @@
                 </div>
 
                 <div class="txn-v-flow" id="txnVFlow">
-                  <div class="txn-panel-legend" aria-label="Flow legend">
-                    <div class="leg-row"><span class="leg-info-solid"></span> Send</div>
-                    <div class="leg-row"><span class="leg-info-dash"></span> Return</div>
-                    <div class="leg-row"><span class="leg-fund"></span> Fund</div>
-                  </div>
                   <svg class="txn-svg" id="txnSvg" aria-hidden="true"></svg>
                   <div class="txn-app-anchor" id="txnAppAnchor" aria-hidden="true"></div>
                   <div class="txn-mch-fund-anchor" id="txnMchFundAnchor" aria-hidden="true"></div>
@@ -2358,7 +2626,7 @@
                       </div>
                       <div class="matrix-header">Liquidity Provider</div>
                       <div class="matrix-header">WAAS Provider</div>
-                      <div class="matrix-header">FAST Network</div>
+                      <div class="matrix-header" id="txnSchemeHeader">FAST Network</div>
                       <div class="matrix-header">Acquirer</div>
                     </div>
                     <div class="matrix-node-row matrix-txn-l1 matrix-cols-6">
@@ -2541,7 +2809,7 @@
                     </div>
                   </div>
                   <div class="txn-success-banner" id="txnSuccessBanner">
-                    ✅ Transaction Complete | $100 SGD paid | 101 USDT deducted | 3.2s
+                    ✅ Transaction Complete | $100 SGD paid | 74.81 USDT deducted | 3.2s
                   </div>
                 </div>
 
@@ -2682,13 +2950,15 @@
         var SCENE_LABELS = {
           'card-issuance': 'Card Issuance',
           onramp: 'Fiat Onramp',
-          transaction: 'Transaction',
+          transaction: 'QR Transaction',
+          'app-checkout': 'Online Transaction',
         };
 
         var STEP_IDLE = {
           'card-issuance': 'Step 0 — Tap Apply Card in Customer View',
           onramp: 'Step 0 — Enter receive amount, then Top Up',
           transaction: 'Step 0 — Enter amount (SGD), then Generate QR Code',
+          'app-checkout': 'Step 0 — Review checkout, then Place your order',
         };
 
         var ONRAMP_RATES = {
@@ -3116,12 +3386,18 @@
 
         var TXN_FIAT = 'SGD';
         var TXN_FIAT_AMOUNT = 100;
-        var TXN_USDT_AMOUNT = 101;
-        var TXN_USDT_PER_FIAT = 1.01;
+        var TXN_FX_FEE_RATE = 0.01;
+        var TXN_USDT_AMOUNT = 74.81;
         var TXN_WAAS_START = 500;
         var TXN_LP_USDT_START = 1000;
         var txnBalance = 500;
         var txnPayPrefs = ['USDT', 'SGD', 'USD'];
+
+        function getTxnSgdPerUsdt() {
+          return ONRAMP_RATES[TXN_FIAT] && ONRAMP_RATES[TXN_FIAT].USDT
+            ? ONRAMP_RATES[TXN_FIAT].USDT
+            : 1.35;
+        }
 
         function formatTxnFiat(amount) {
           return '$' + amount.toFixed(2) + ' ' + TXN_FIAT;
@@ -3131,15 +3407,61 @@
           return (amount >= 0 ? '+' : '-') + '$' + Math.abs(amount).toFixed(2) + ' ' + TXN_FIAT;
         }
 
-        function calcTxnUsdtAmount(fiatAmount) {
-          return Math.round(fiatAmount * TXN_USDT_PER_FIAT * 100) / 100;
+        function calcTxnSpotUsdt(fiatAmount) {
+          return Math.round((fiatAmount / getTxnSgdPerUsdt()) * 100) / 100;
         }
+
+        function calcTxnUsdtFee(fiatAmount) {
+          return Math.round(calcTxnSpotUsdt(fiatAmount) * TXN_FX_FEE_RATE * 100) / 100;
+        }
+
+        function calcTxnUsdtAmount(fiatAmount) {
+          return Math.round((calcTxnSpotUsdt(fiatAmount) + calcTxnUsdtFee(fiatAmount)) * 100) / 100;
+        }
+
+        function calcTxnFiatEquivFromUsdt(usdtAmount) {
+          return Math.round(usdtAmount * getTxnSgdPerUsdt() * 100) / 100;
+        }
+
+        TXN_USDT_AMOUNT = calcTxnUsdtAmount(TXN_FIAT_AMOUNT);
 
         function readTxnPayAmountInput() {
           if (!txnPayAmount || txnPayAmount.value === '') return null;
           var v = parseFloat(txnPayAmount.value);
           if (isNaN(v) || v <= 0) return null;
           return Math.round(v * 100) / 100;
+        }
+
+        function syncAppCheckoutAmountDisplay() {
+          var formatted = formatTxnFiat(TXN_FIAT_AMOUNT);
+          var spotUsdt = calcTxnSpotUsdt(TXN_FIAT_AMOUNT);
+          var feeUsdt = calcTxnUsdtFee(TXN_FIAT_AMOUNT);
+          var totalUsdt = calcTxnUsdtAmount(TXN_FIAT_AMOUNT);
+          if (appCheckoutPrice) appCheckoutPrice.textContent = formatted;
+          if (appCheckoutSubtotal) appCheckoutSubtotal.textContent = formatted;
+          if (appCheckoutTotal) appCheckoutTotal.textContent = formatted;
+          if (appCheckoutUsdtEst) {
+            appCheckoutUsdtEst.textContent =
+              totalUsdt.toFixed(2) + ' USDT · fee ' + feeUsdt.toFixed(2);
+          }
+        }
+
+        function syncSchemeHeaderForScene(scene) {
+          if (!txnSchemeHeader) return;
+          if (scene === 'app-checkout') {
+            txnSchemeHeader.textContent = 'Visa';
+            txnSchemeHeader.classList.add('scheme-visa');
+          } else {
+            txnSchemeHeader.textContent = 'FAST Network';
+            txnSchemeHeader.classList.remove('scheme-visa');
+          }
+        }
+
+        function syncPhoneChromeForScene(scene) {
+          if (phoneTitle) {
+            phoneTitle.textContent = scene === 'app-checkout' ? 'Checkout' : 'Demo Bank';
+          }
+          syncSchemeHeaderForScene(scene);
         }
 
         function refreshTxnFlowCopy() {
@@ -3153,7 +3475,7 @@
           });
           TRANSACTION_EDGES.forEach(function (edge) {
             if (edge.id === 'te-i4u') {
-              edge.label = '1 USDT ≈ ' + (TXN_FIAT_AMOUNT / TXN_USDT_AMOUNT).toFixed(2) + ' ' + TXN_FIAT;
+              edge.label = '1 USDT ≈ ' + getTxnSgdPerUsdt().toFixed(2) + ' ' + TXN_FIAT;
             }
             if (edge.id === 'te-i5') {
               edge.label = TXN_USDT_AMOUNT + ' USDT Transfer';
@@ -3168,7 +3490,8 @@
               ' USDT deducted | 3.2s';
           }
           if (mchOrderAmount) mchOrderAmount.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
-          if (currentScene === 'transaction') buildTxnEdgePaths();
+          syncAppCheckoutAmountDisplay();
+          if (currentScene === 'transaction' || currentScene === 'app-checkout') buildTxnEdgePaths();
         }
 
         function applyTxnPaymentAmount(sgdAmount) {
@@ -3260,7 +3583,7 @@
             flow: 'return',
             route: 'orth-h',
             busOffset: 12,
-            label: '1 USDT ≈ ' + (TXN_FIAT_AMOUNT / TXN_USDT_AMOUNT).toFixed(2) + ' ' + TXN_FIAT,
+            label: '1 USDT ≈ ' + getTxnSgdPerUsdt().toFixed(2) + ' ' + TXN_FIAT,
             labelOn: 'busCenter',
             labelOffsetY: 10,
           },
@@ -3592,6 +3915,10 @@
 
 
         var currentScene = 'card-issuance';
+
+        function isTxnFlowScene() {
+          return currentScene === 'transaction' || currentScene === 'app-checkout';
+        }
         var demoIndex = 0;
         var demoRunning = false;
         var demoPaused = false;
@@ -3638,6 +3965,15 @@
         var valWaasOnchain = document.getElementById('valWaasOnchain');
         var btnGenQr = document.getElementById('btnGenQr');
         var txnPayAmount = document.getElementById('txnPayAmount');
+        var btnPlaceOrder = document.getElementById('btnPlaceOrder');
+        var appCheckoutPrice = document.getElementById('appCheckoutPrice');
+        var appCheckoutSubtotal = document.getElementById('appCheckoutSubtotal');
+        var appCheckoutTotal = document.getElementById('appCheckoutTotal');
+        var appCheckoutUsdtEst = document.getElementById('appCheckoutUsdtEst');
+        var appCheckoutStatus = document.getElementById('appCheckoutStatus');
+        var appCheckoutBalanceHint = document.getElementById('appCheckoutBalanceHint');
+        var phoneTitle = document.getElementById('phoneTitle');
+        var txnSchemeHeader = document.getElementById('txnSchemeHeader');
         var mchOrderAmount = document.getElementById('mchOrderAmount');
         var qrModalOverlay = document.getElementById('qrModalOverlay');
         var qrModalClose = document.getElementById('qrModalClose');
@@ -3686,14 +4022,31 @@
         function getSceneEdges() {
           if (currentScene === 'onramp') return ONRAMP_EDGES;
           if (currentScene === 'card-issuance') return ISSUANCE_EDGES;
-          if (currentScene === 'transaction') return [];
+          if (currentScene === 'transaction' || currentScene === 'app-checkout') return [];
           return [];
+        }
+
+        function getAppCheckoutSteps() {
+          return TRANSACTION_STEPS.map(function (step) {
+            var copy = {
+              label: step.label
+                .replace(/FAST Network/g, 'Visa')
+                .replace('APP → Merchant', 'Place Order → Merchant'),
+              nodes: step.nodes ? step.nodes.slice() : [],
+              edges: step.edges ? step.edges.slice() : [],
+              delay: step.delay,
+            };
+            if (step.txn) copy.txn = step.txn;
+            if (step.markDone) copy.markDone = step.markDone.slice();
+            return copy;
+          });
         }
 
         function getSceneSteps() {
           if (currentScene === 'onramp') return ONRAMP_STEPS;
           if (currentScene === 'card-issuance') return ISSUANCE_STEPS;
           if (currentScene === 'transaction') return TRANSACTION_STEPS;
+          if (currentScene === 'app-checkout') return getAppCheckoutSteps();
           return [];
         }
 
@@ -4423,7 +4776,7 @@
           var colBody = document.querySelector('#col-merchant .col-body');
           if (!anchor || !colBody) return;
           var alignNode =
-            currentScene === 'transaction'
+            isTxnFlowScene()
               ? document.getElementById('node-txn-acq-rcv')
               : null;
           if (alignNode) {
@@ -4746,7 +5099,7 @@
         }
 
         function buildEdgePaths() {
-          if (currentScene === 'transaction') {
+          if (isTxnFlowScene()) {
             buildTxnEdgePaths();
             if (arrowSvg) arrowSvg.innerHTML = '';
             edgePathMap = {};
@@ -4789,7 +5142,7 @@
         }
 
         function clearFlowState() {
-          if (currentScene === 'transaction') {
+          if (isTxnFlowScene()) {
             document.querySelectorAll('#txnVFlow .process-node').forEach(function (n) {
               n.classList.remove('active', 'done');
               n.classList.add('inactive');
@@ -4832,6 +5185,16 @@
               txnStatus.textContent = '';
               txnStatus.classList.remove('success');
             }
+            if (appCheckoutStatus) {
+              appCheckoutStatus.textContent = '';
+              appCheckoutStatus.classList.remove('success');
+            }
+            if (btnPlaceOrder) {
+              btnPlaceOrder.disabled = false;
+              btnPlaceOrder.classList.remove('pulse');
+              btnPlaceOrder.textContent = 'Place your order';
+            }
+            if (phoneScreen) phoneScreen.classList.remove('app-running');
             if (mchOrderStatus) mchOrderStatus.textContent = '🟡 Pending';
             if (mchOrderAmount) mchOrderAmount.textContent = formatTxnFiat(TXN_FIAT_AMOUNT);
             if (mchRevenue) mchRevenue.textContent = formatTxnFiat(0);
@@ -4870,7 +5233,7 @@
         }
 
         function activateEdges(ids) {
-          var map = currentScene === 'transaction' ? txnEdgePathMap : edgePathMap;
+          var map = isTxnFlowScene() ? txnEdgePathMap : edgePathMap;
           (ids || []).forEach(function (id) {
             var path = map[id];
             if (path && path.classList) {
@@ -4884,7 +5247,7 @@
         }
 
         function pulseCurrentEdges(ids) {
-          var map = currentScene === 'transaction' ? txnEdgePathMap : edgePathMap;
+          var map = isTxnFlowScene() ? txnEdgePathMap : edgePathMap;
           Object.keys(map).forEach(function (id) {
             var path = map[id];
             if (path && path.classList) path.classList.remove('active');
@@ -5132,8 +5495,38 @@
           if (txnBalanceAmt) txnBalanceAmt.textContent = txnBalance.toFixed(2) + ' USDT';
           if (txnBalanceEquiv) {
             txnBalanceEquiv.textContent =
-              '≈ ' + TXN_FIAT + ' ' + (txnBalance * (TXN_FIAT_AMOUNT / TXN_USDT_AMOUNT)).toFixed(2);
+              '≈ ' + TXN_FIAT + ' ' + calcTxnFiatEquivFromUsdt(txnBalance).toFixed(2);
           }
+          if (appCheckoutBalanceHint) {
+            appCheckoutBalanceHint.textContent = txnBalance.toFixed(2) + ' USDT available';
+          }
+        }
+
+        function setTxnCustomerStatus(text, success) {
+          if (currentScene === 'app-checkout') {
+            if (appCheckoutStatus) {
+              appCheckoutStatus.textContent = text;
+              appCheckoutStatus.classList.toggle('success', !!success);
+            }
+          } else if (txnStatus) {
+            txnStatus.textContent = text;
+            txnStatus.classList.toggle('success', !!success);
+          }
+        }
+
+        function resetAppCheckoutApp() {
+          resetTransactionApp();
+          if (appCheckoutStatus) {
+            appCheckoutStatus.textContent = '';
+            appCheckoutStatus.classList.remove('success');
+          }
+          if (btnPlaceOrder) {
+            btnPlaceOrder.disabled = false;
+            btnPlaceOrder.classList.remove('pulse');
+            btnPlaceOrder.textContent = 'Place your order';
+          }
+          if (appCheckoutBalanceHint) appCheckoutBalanceHint.textContent = txnBalance.toFixed(2) + ' USDT available';
+          syncAppCheckoutAmountDisplay();
         }
 
         function resetTransactionApp(opts) {
@@ -5273,15 +5666,25 @@
           }
           if (step.txn) {
             if (step.txn.s1) {
-              if (txnStatus) {
-                txnStatus.textContent = 'Payment initiated — ' + formatTxnFiat(TXN_FIAT_AMOUNT) + ' order';
-                txnStatus.classList.add('success');
-              }
+              setTxnCustomerStatus(
+                'Order placed — ' + formatTxnFiat(TXN_FIAT_AMOUNT),
+                true
+              );
               if (mchOrderStatus) mchOrderStatus.textContent = '🟡 Processing';
+              if (currentScene === 'app-checkout' && btnPlaceOrder) {
+                btnPlaceOrder.disabled = true;
+                btnPlaceOrder.classList.add('pulse');
+                btnPlaceOrder.textContent = 'Processing…';
+              }
+              if (phoneScreen) phoneScreen.classList.add('app-running');
             }
             if (step.txn.s2) {
               setTxnNodeText('txn-node-acq', 'Receive Payment<br />' + formatTxnFiat(TXN_FIAT_AMOUNT));
-              setTxnNodeText('txn-node-scheme', 'Route Payment<br />' + formatTxnFiat(TXN_FIAT_AMOUNT));
+              if (currentScene === 'app-checkout') {
+                setTxnNodeText('txn-node-scheme', 'Visa Auth<br />' + formatTxnFiat(TXN_FIAT_AMOUNT));
+              } else {
+                setTxnNodeText('txn-node-scheme', 'Route Payment<br />' + formatTxnFiat(TXN_FIAT_AMOUNT));
+              }
               setTxnNodeText('txn-node-iss-req', 'Auth Request<br />Received');
             }
             if (step.txn.s3) {
@@ -5315,11 +5718,16 @@
             }
             if (step.txn.s10) {
               setTxnNodeText('txn-node-iss-ok', 'Payment<br />Success ✓');
-              setTxnNodeText('txn-node-scheme-ok', 'Post Auth<br />Success');
+              if (currentScene === 'app-checkout') {
+                setTxnNodeText('txn-node-scheme-ok', 'Visa Post<br />Auth ✓');
+              } else {
+                setTxnNodeText('txn-node-scheme-ok', 'Post Auth<br />Success');
+              }
               setTxnNodeText('txn-node-acq-settle', 'Settle<br />Merchant');
-              if (txnStatus) {
-                txnStatus.textContent = 'Payment Success ✓';
-                txnStatus.classList.add('success');
+              setTxnCustomerStatus('Payment Success ✓', true);
+              if (currentScene === 'app-checkout' && btnPlaceOrder) {
+                btnPlaceOrder.classList.remove('pulse');
+                btnPlaceOrder.textContent = 'Order placed ✓';
               }
             }
             if (step.txn.fund1) {
@@ -5370,7 +5778,7 @@
         function runDemoStep(index) {
           if (demoPaused) return;
 
-          if (currentScene !== 'transaction' && !Object.keys(edgePathMap).length) {
+          if (currentScene !== 'transaction' && currentScene !== 'app-checkout' && !Object.keys(edgePathMap).length) {
             buildEdgePaths();
           }
 
@@ -5391,7 +5799,7 @@
           activateNodes(step.nodes);
           applyStepEffects(step);
 
-          if (currentScene === 'transaction') {
+          if (currentScene === 'transaction' || currentScene === 'app-checkout') {
             buildTxnEdgePaths();
           }
 
@@ -5413,7 +5821,8 @@
           if (
             currentScene !== 'card-issuance' &&
             currentScene !== 'onramp' &&
-            currentScene !== 'transaction'
+            currentScene !== 'transaction' &&
+            currentScene !== 'app-checkout'
           )
             return;
           if (demoRunning) return;
@@ -5453,6 +5862,10 @@
             }
             txnDemoStartTime = Date.now();
             resetTransactionApp({ keepQr: !!opts.keepQr });
+          } else if (currentScene === 'app-checkout') {
+            applyTxnPaymentAmount(TXN_FIAT_AMOUNT);
+            txnDemoStartTime = Date.now();
+            resetAppCheckoutApp();
           }
 
           demoRunning = true;
@@ -5498,6 +5911,8 @@
             persistOnrampBaselineLines();
           } else if (currentScene === 'transaction') {
             resetTransactionApp();
+          } else if (currentScene === 'app-checkout') {
+            resetAppCheckoutApp();
           }
           setStepText(STEP_IDLE[currentScene] || 'Step 0');
         }
@@ -5523,6 +5938,7 @@
             panel.classList.toggle('visible', panel.getAttribute('data-panel') === scene);
           });
 
+          syncPhoneChromeForScene(scene);
           resetDemo();
         }
 
@@ -5535,6 +5951,7 @@
         if (btnApplyCard) btnApplyCard.addEventListener('click', startDemo);
         if (btnTopUp) btnTopUp.addEventListener('click', startDemo);
         if (btnGenQr) btnGenQr.addEventListener('click', showTxnPayNowQr);
+        if (btnPlaceOrder) btnPlaceOrder.addEventListener('click', startDemo);
         if (qrModalClose) qrModalClose.addEventListener('click', closeTxnQrModal);
         if (qrModalOverlay) {
           qrModalOverlay.addEventListener('click', function (e) {
@@ -5591,7 +6008,8 @@
           if (
             currentScene === 'card-issuance' ||
             currentScene === 'onramp' ||
-            currentScene === 'transaction'
+            currentScene === 'transaction' ||
+            currentScene === 'app-checkout'
           ) {
             scheduleBuildEdgePaths();
           }
@@ -5601,9 +6019,11 @@
         });
 
         bindAllFlagImages(document);
+        syncPhoneChromeForScene('card-issuance');
         resetIssuanceApp();
         resetOnrampApp();
         resetTransactionApp();
+        resetAppCheckoutApp();
       })();
     </script>
   </body>

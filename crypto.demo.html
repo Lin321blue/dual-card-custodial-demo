@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920" />
+    <title>Stablecoin Card Payment Demo</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .app {
+        max-width: 1920px;
+        margin: 0 auto;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 20px 28px 24px;
+      }
+
+      /* Header */
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        flex-shrink: 0;
+      }
+
+      .header h1 {
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.02em;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        font-family: inherit;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 10px 18px;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        background: #1e293b;
+        color: #f1f5f9;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+      }
+
+      .btn:hover {
+        background: #334155;
+        border-color: #475569;
+      }
+
+      .btn-primary {
+        background: #10b981;
+        border-color: #059669;
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: #059669;
+      }
+
+      /* Main layout */
+      .main {
+        display: flex;
+        gap: 20px;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .diagram-wrap {
+        flex: 0 0 65%;
+        position: relative;
+        background: #111827;
+        border: 1px solid #1e293b;
+        border-radius: 12px;
+        overflow: hidden;
+        min-height: 720px;
+      }
+
+      .diagram-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        min-height: 720px;
+        padding: 12px 8px 56px;
+      }
+
+      .swimlanes {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        height: 100%;
+        min-height: 680px;
+        gap: 4px;
+        position: relative;
+        z-index: 2;
+      }
+
+      .lane {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        border-right: 1px solid #1e293b;
+      }
+
+      .lane:last-child {
+        border-right: none;
+      }
+
+      .lane.wl-lane {
+        background: #0f2a1a;
+        border-radius: 6px;
+        margin: 0 2px;
+      }
+
+      .lane-header {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-align: center;
+        padding: 8px 4px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid #1e293b;
+        line-height: 1.25;
+        flex-shrink: 0;
+      }
+
+      .lane.wl-lane .lane-header {
+        color: #6ee7b7;
+      }
+
+      .lane-badge {
+        display: block;
+        font-size: 0.55rem;
+        font-weight: 600;
+        color: #34d399;
+        margin-top: 2px;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      .lane-body {
+        flex: 1;
+        position: relative;
+        padding: 8px 4px;
+      }
+
+      /* Nodes */
+      .node {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 8px);
+        max-width: 140px;
+        padding: 10px 8px;
+        border-radius: 12px;
+        background: #1e293b;
+        border: 2px solid #334155;
+        font-size: 0.68rem;
+        line-height: 1.35;
+        text-align: center;
+        color: #64748b;
+        white-space: pre-line;
+        transition: background 0.35s, border-color 0.35s, color 0.35s, box-shadow 0.35s;
+        z-index: 3;
+      }
+
+      .node.active {
+        background: #f8fafc;
+        color: #0f172a;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      }
+
+      .node.active.blue {
+        border-color: #3b82f6;
+      }
+
+      .node.active.green {
+        border-color: #10b981;
+      }
+
+      .node.active.purple {
+        border-color: #8b5cf6;
+      }
+
+      /* Node vertical positions (% of lane-body) */
+      .node[data-y='12'] { top: 12%; }
+      .node[data-y='28'] { top: 28%; }
+      .node[data-y='42'] { top: 42%; }
+      .node[data-y='55'] { top: 55%; }
+      .node[data-y='68'] { top: 68%; }
+      .node[data-y='82'] { top: 82%; }
+
+      /* SVG arrows */
+      .arrow-layer {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .arrow-path {
+        fill: none;
+        stroke: #475569;
+        stroke-width: 2;
+        stroke-dasharray: 8 6;
+        opacity: 0.25;
+        transition: opacity 0.4s, stroke 0.4s;
+      }
+
+      .arrow-path.active {
+        opacity: 1;
+        stroke: #60a5fa;
+        animation: dash-flow 0.8s linear infinite;
+      }
+
+      .arrow-path.active.green {
+        stroke: #34d399;
+      }
+
+      .arrow-path.active.glow {
+        stroke: #fbbf24;
+        stroke-width: 2.5;
+        filter: drop-shadow(0 0 4px #fbbf24);
+      }
+
+      .arrow-path.return.active {
+        stroke: #a78bfa;
+      }
+
+      @keyframes dash-flow {
+        to {
+          stroke-dashoffset: -28;
+        }
+      }
+
+      .arrow-label {
+        font-size: 10px;
+        fill: #94a3b8;
+        font-family: system-ui, sans-serif;
+        opacity: 0;
+        transition: opacity 0.35s;
+      }
+
+      .arrow-label.active {
+        opacity: 1;
+        fill: #e2e8f0;
+      }
+
+      /* Success banner */
+      .success-banner {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 14px 20px;
+        background: linear-gradient(90deg, #065f46, #047857);
+        color: #ecfdf5;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-align: center;
+        transform: translateY(100%);
+        transition: transform 0.45s ease;
+        z-index: 10;
+        border-top: 2px solid #10b981;
+      }
+
+      .success-banner.show {
+        transform: translateY(0);
+      }
+
+      /* Balance panel */
+      .balances {
+        flex: 0 0 calc(35% - 20px);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .balance-card {
+        border-radius: 12px;
+        padding: 20px 22px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .balance-card.blue {
+        background: linear-gradient(135deg, #1e3a5f 0%, #1e293b 100%);
+        border-left: 4px solid #3b82f6;
+      }
+
+      .balance-card.green {
+        background: linear-gradient(135deg, #064e3b 0%, #1e293b 100%);
+        border-left: 4px solid #10b981;
+      }
+
+      .balance-card.purple {
+        background: linear-gradient(135deg, #3b1f5e 0%, #1e293b 100%);
+        border-left: 4px solid #8b5cf6;
+      }
+
+      .balance-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #cbd5e1;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .badge-our {
+        font-size: 0.65rem;
+        background: #10b981;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 700;
+      }
+
+      .balance-amount {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .balance-unit {
+        font-size: 1rem;
+        color: #94a3b8;
+        margin-left: 4px;
+      }
+
+      .balance-delta {
+        margin-top: 8px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 0.3s, transform 0.3s;
+      }
+
+      .balance-delta.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .balance-delta.neg {
+        color: #f87171;
+      }
+
+      .balance-delta.pos {
+        color: #4ade80;
+      }
+
+      .balance-card.flash-red {
+        animation: flash-red 0.6s ease;
+      }
+
+      .balance-card.flash-green {
+        animation: flash-green 0.6s ease;
+      }
+
+      @keyframes flash-red {
+        0%,
+        100% {
+          box-shadow: none;
+        }
+        50% {
+          box-shadow: inset 0 0 40px rgba(248, 113, 113, 0.35);
+        }
+      }
+
+      @keyframes flash-green {
+        0%,
+        100% {
+          box-shadow: none;
+        }
+        50% {
+          box-shadow: inset 0 0 40px rgba(74, 222, 128, 0.35);
+        }
+      }
+
+      .step-indicator {
+        margin-top: auto;
+        padding-top: 12px;
+        font-size: 0.75rem;
+        color: #64748b;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1>Stablecoin Card Payment Demo</h1>
+        <div class="controls">
+          <button type="button" class="btn btn-primary" id="btnStart">▶ Start Demo</button>
+          <button type="button" class="btn" id="btnPause">⏸ Pause</button>
+          <button type="button" class="btn" id="btnReset">↺ Reset</button>
+        </div>
+      </header>
+
+      <main class="main">
+        <section class="diagram-wrap">
+          <div class="diagram-inner" id="diagram">
+            <svg class="arrow-layer" id="arrowSvg" aria-hidden="true"></svg>
+
+            <div class="swimlanes" id="swimlanes">
+              <!-- 1 Bank APP -->
+              <div class="lane" data-lane="bank-app">
+                <div class="lane-header">Bank APP</div>
+                <div class="lane-body">
+                  <div class="node" id="n-bank-app-funding" data-y="55">Set Crypto as Funding Source</div>
+                  <div class="node" id="n-bank-app-funds" data-y="82">Funds In: 100 EUR
+Crypto Balance Updated</div>
+                </div>
+              </div>
+              <!-- 2 Bank Issuing -->
+              <div class="lane" data-lane="issuing">
+                <div class="lane-header">Bank Issuing System</div>
+                <div class="lane-body">
+                  <div class="node" id="n-issuing-funding" data-y="42">Funding Source: Crypto ✓</div>
+                  <div class="node" id="n-issuing-funds-in" data-y="68">Funds In: 100 EUR ✓</div>
+                  <div class="node" id="n-issuing-success" data-y="82">Payment Success Notification</div>
+                </div>
+              </div>
+              <!-- 3 WL Crypto -->
+              <div class="lane wl-lane" data-lane="wl">
+                <div class="lane-header">
+                  WL Crypto System
+                  <span class="lane-badge">(Our System)</span>
+                </div>
+                <div class="lane-body">
+                  <div class="node" id="n-wl-fx" data-y="28">1. Check FX Rate
+2. Calculate Crypto Amount</div>
+                  <div class="node" id="n-wl-result" data-y="48">Result: 101 USDT Required</div>
+                  <div class="node" id="n-wl-offramp" data-y="72">Fund In: +101 USDT
+Off-ramp to Fiat</div>
+                </div>
+              </div>
+              <!-- 4 Liquidity -->
+              <div class="lane" data-lane="liquidity">
+                <div class="lane-header">Liquidity Provider</div>
+                <div class="lane-body">
+                  <div class="node" id="n-lp-fx" data-y="48">FX Inquiry</div>
+                </div>
+              </div>
+              <!-- 5 WAAS -->
+              <div class="lane" data-lane="waas">
+                <div class="lane-header">WAAS Provider</div>
+                <div class="lane-body">
+                  <div class="node" id="n-waas-fraud" data-y="42">Fraud Check</div>
+                  <div class="node" id="n-waas-send" data-y="62">Fraud Check ✓
+Send Crypto to Destination</div>
+                </div>
+              </div>
+              <!-- 6 Merchant -->
+              <div class="lane" data-lane="merchant">
+                <div class="lane-header">Merchant</div>
+                <div class="lane-body">
+                  <div class="node" id="n-merchant-pay" data-y="22">Payment Request</div>
+                  <div class="node" id="n-merchant-deliver" data-y="78">Get Notification
+Deliver Item ✓</div>
+                </div>
+              </div>
+              <!-- 7 Acquirer -->
+              <div class="lane" data-lane="acquirer">
+                <div class="lane-header">Acquirer</div>
+                <div class="lane-body">
+                  <div class="node" id="n-acquirer-pay" data-y="22">Payment Request</div>
+                </div>
+              </div>
+              <!-- 8 Card Network -->
+              <div class="lane" data-lane="cardnet">
+                <div class="lane-header">Card Network</div>
+                <div class="lane-body">
+                  <div class="node" id="n-cardnet-pay" data-y="22">Payment Request</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="success-banner" id="successBanner">
+            ✅ Payment Complete | 100 EUR paid | 101 USDT deducted | Total time: 3.2s
+          </div>
+        </section>
+
+        <aside class="balances">
+          <div class="balance-card blue" id="cardCustomer">
+            <div class="balance-title">👤 Customer Crypto Wallet</div>
+            <div>
+              <span class="balance-amount" id="balCustomer">500.00</span>
+              <span class="balance-unit">USDT</span>
+            </div>
+            <div class="balance-delta neg" id="deltaCustomer">-101 USDT</div>
+          </div>
+
+          <div class="balance-card green" id="cardSettlement">
+            <div class="balance-title">
+              🏦 WL Settlement Account
+              <span class="badge-our">Our Account</span>
+            </div>
+            <div>
+              <span class="balance-amount" id="balSettlement">0.00</span>
+              <span class="balance-unit">EUR</span>
+            </div>
+            <div class="balance-delta" id="deltaSettlement"></div>
+          </div>
+
+          <div class="balance-card purple" id="cardMerchant">
+            <div class="balance-title">🏪 Merchant Account</div>
+            <div>
+              <span class="balance-amount" id="balMerchant">0.00</span>
+              <span class="balance-unit">EUR</span>
+            </div>
+            <div class="balance-delta pos" id="deltaMerchant">+100 EUR</div>
+          </div>
+
+          <p class="step-indicator" id="stepIndicator">Step 0 / 10 — Press Start Demo</p>
+        </aside>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        const STEP_MS = 1500;
+
+        const NODE_STYLES = {
+          'n-wl-fx': 'green',
+          'n-wl-result': 'green',
+          'n-wl-offramp': 'green',
+          'n-merchant-deliver': 'purple',
+        };
+
+        const STEPS = [
+          {
+            label: 'Payment request chain',
+            nodes: ['n-merchant-pay', 'n-acquirer-pay', 'n-cardnet-pay'],
+            arrows: [
+              { from: 'n-merchant-pay', to: 'n-acquirer-pay', label: '100 EUR' },
+              { from: 'n-acquirer-pay', to: 'n-cardnet-pay', label: '' },
+            ],
+          },
+          {
+            label: 'Crypto funding source',
+            nodes: ['n-bank-app-funding', 'n-issuing-funding'],
+            arrows: [{ from: 'n-cardnet-pay', to: 'n-issuing-funding', label: 'Auth Request: 100 EUR' }],
+          },
+          {
+            label: 'Authorization check',
+            nodes: ['n-wl-fx'],
+            arrows: [{ from: 'n-issuing-funding', to: 'n-wl-fx', label: 'Authorization Check', green: true }],
+          },
+          {
+            label: 'FX inquiry',
+            nodes: ['n-lp-fx'],
+            arrows: [
+              { from: 'n-wl-fx', to: 'n-lp-fx', label: '' },
+              { from: 'n-lp-fx', to: 'n-wl-fx', label: '1 USDT ≈ 0.99 EUR', return: true },
+            ],
+          },
+          {
+            label: 'Crypto amount & fraud check',
+            nodes: ['n-wl-result', 'n-waas-fraud'],
+            arrows: [{ from: 'n-wl-result', to: 'n-waas-fraud', label: 'Payment Request: 101 USDT' }],
+          },
+          {
+            label: 'Off-ramp request',
+            nodes: ['n-waas-send'],
+            arrows: [{ from: 'n-wl-result', to: 'n-waas-send', label: 'Off-ramp Request' }],
+            balance: {
+              customer: { to: 399, flash: 'red', delta: '-101 USDT', deltaNeg: true },
+            },
+          },
+          {
+            label: 'USDT transferred',
+            nodes: ['n-wl-offramp'],
+            arrows: [{ from: 'n-waas-send', to: 'n-wl-offramp', label: '101 USDT transferred', green: true }],
+            balance: {
+              settlement: { to: 100, flash: 'green' },
+            },
+          },
+          {
+            label: 'Fiat to bank',
+            nodes: ['n-issuing-funds-in'],
+            arrows: [{ from: 'n-wl-offramp', to: 'n-issuing-funds-in', label: 'Transfer Fiat: 100 EUR', green: true }],
+            balance: {
+              settlement: { to: 0, flash: 'green' },
+            },
+          },
+          {
+            label: 'Payment confirmed',
+            nodes: ['n-bank-app-funds', 'n-issuing-success', 'n-merchant-deliver'],
+            arrows: [
+              { from: 'n-issuing-success', to: 'n-bank-app-funds', label: '' },
+              { from: 'n-cardnet-pay', to: 'n-merchant-deliver', label: 'Payment Confirmed' },
+            ],
+            balance: {
+              merchant: { to: 100, flash: 'green', delta: '+100 EUR', deltaPos: true },
+            },
+          },
+          {
+            label: 'Complete',
+            nodes: [],
+            arrows: 'all-glow',
+            banner: true,
+          },
+        ];
+
+        let currentStep = 0;
+        let nextIndex = 0;
+        let timer = null;
+        let paused = false;
+        let allArrowEls = [];
+
+        const els = {
+          diagram: document.getElementById('diagram'),
+          arrowSvg: document.getElementById('arrowSvg'),
+          successBanner: document.getElementById('successBanner'),
+          stepIndicator: document.getElementById('stepIndicator'),
+          balCustomer: document.getElementById('balCustomer'),
+          balSettlement: document.getElementById('balSettlement'),
+          balMerchant: document.getElementById('balMerchant'),
+          cardCustomer: document.getElementById('cardCustomer'),
+          cardSettlement: document.getElementById('cardSettlement'),
+          cardMerchant: document.getElementById('cardMerchant'),
+          deltaCustomer: document.getElementById('deltaCustomer'),
+          deltaSettlement: document.getElementById('deltaSettlement'),
+          deltaMerchant: document.getElementById('deltaMerchant'),
+        };
+
+        const balances = { customer: 500, settlement: 0, merchant: 0 };
+
+        function nodeCenter(id) {
+          const el = document.getElementById(id);
+          if (!el) return null;
+          const dr = els.diagram.getBoundingClientRect();
+          const r = el.getBoundingClientRect();
+          return {
+            x: r.left - dr.left + r.width / 2,
+            y: r.top - dr.top + r.height / 2,
+          };
+        }
+
+        function clearArrows() {
+          els.arrowSvg.innerHTML = '';
+          allArrowEls = [];
+        }
+
+        function drawArrow(fromId, toId, label, opts) {
+          const a = nodeCenter(fromId);
+          const b = nodeCenter(toId);
+          if (!a || !b) return null;
+
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const mx = (a.x + b.x) / 2;
+          const my = (a.y + b.y) / 2;
+          const curve = Math.abs(dx) > 40 ? ` Q ${mx} ${my - 20} ` : ' ';
+
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const d =
+            Math.abs(dx) > 80 && Math.abs(dy) < 30
+              ? `M ${a.x} ${a.y} C ${a.x + dx * 0.4} ${a.y} ${b.x - dx * 0.4} ${b.y} ${b.x} ${b.y}`
+              : `M ${a.x} ${a.y}${curve}${b.x} ${b.y}`;
+          path.setAttribute('d', d);
+          path.setAttribute('class', 'arrow-path');
+          if (opts && opts.return) path.classList.add('return');
+          els.arrowSvg.appendChild(path);
+
+          let labelEl = null;
+          if (label) {
+            labelEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            labelEl.setAttribute('class', 'arrow-label');
+            labelEl.setAttribute('x', mx);
+            labelEl.setAttribute('y', my - 8);
+            labelEl.setAttribute('text-anchor', 'middle');
+            labelEl.textContent = label;
+            els.arrowSvg.appendChild(labelEl);
+          }
+
+          return { path, labelEl, opts };
+        }
+
+        function buildArrowsForStep(stepDef) {
+          clearArrows();
+          if (stepDef.arrows === 'all-glow') {
+            const pairs = [
+              ['n-merchant-pay', 'n-acquirer-pay', '100 EUR'],
+              ['n-acquirer-pay', 'n-cardnet-pay', ''],
+              ['n-cardnet-pay', 'n-issuing-funding', 'Auth Request: 100 EUR'],
+              ['n-issuing-funding', 'n-wl-fx', 'Authorization Check'],
+              ['n-wl-fx', 'n-lp-fx', ''],
+              ['n-lp-fx', 'n-wl-fx', '1 USDT ≈ 0.99 EUR'],
+              ['n-wl-result', 'n-waas-fraud', '101 USDT'],
+              ['n-wl-result', 'n-waas-send', 'Off-ramp'],
+              ['n-waas-send', 'n-wl-offramp', '101 USDT'],
+              ['n-wl-offramp', 'n-issuing-funds-in', '100 EUR'],
+              ['n-issuing-success', 'n-bank-app-funds', ''],
+              ['n-cardnet-pay', 'n-merchant-deliver', 'Confirmed'],
+            ];
+            pairs.forEach(([f, t, lbl]) => {
+              const r = drawArrow(f, t, lbl, { glow: true });
+              if (r) {
+                r.path.classList.add('active', 'glow');
+                if (r.labelEl) r.labelEl.classList.add('active');
+                allArrowEls.push(r);
+              }
+            });
+            return;
+          }
+
+          (stepDef.arrows || []).forEach((ar) => {
+            const r = drawArrow(ar.from, ar.to, ar.label || '', ar);
+            if (r) {
+              r.path.classList.add('active');
+              if (ar.green) r.path.classList.add('green');
+              if (ar.glow) r.path.classList.add('glow');
+              if (r.labelEl) r.labelEl.classList.add('active');
+              allArrowEls.push(r);
+            }
+          });
+        }
+
+        function setNodesActive(ids) {
+          document.querySelectorAll('.node').forEach((n) => {
+            n.classList.remove('active', 'blue', 'green', 'purple');
+          });
+          ids.forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('active');
+            const style = NODE_STYLES[id] || 'blue';
+            el.classList.add(style);
+          });
+        }
+
+        function animateBalance(el, from, to, duration) {
+          return new Promise((resolve) => {
+            const start = performance.now();
+            function tick(now) {
+              const t = Math.min(1, (now - start) / duration);
+              const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+              const v = from + (to - from) * eased;
+              el.textContent = v.toFixed(2);
+              if (t < 1) requestAnimationFrame(tick);
+              else resolve();
+            }
+            requestAnimationFrame(tick);
+          });
+        }
+
+        async function applyBalanceUpdate(key, cfg) {
+          const map = {
+            customer: { el: els.balCustomer, card: els.cardCustomer, state: 'customer' },
+            settlement: { el: els.balSettlement, card: els.cardSettlement, state: 'settlement' },
+            merchant: { el: els.balMerchant, card: els.cardMerchant, state: 'merchant' },
+          };
+          const m = map[key];
+          if (!m || cfg.to === undefined) return;
+
+          const from = balances[m.state];
+          const to = cfg.to;
+          balances[m.state] = to;
+
+          if (cfg.flash === 'red') m.card.classList.add('flash-red');
+          if (cfg.flash === 'green') m.card.classList.add('flash-green');
+          setTimeout(() => m.card.classList.remove('flash-red', 'flash-green'), 650);
+
+          const deltaMap = {
+            customer: els.deltaCustomer,
+            settlement: els.deltaSettlement,
+            merchant: els.deltaMerchant,
+          };
+          const deltaEl = deltaMap[key];
+          if (deltaEl && cfg.delta) {
+            deltaEl.textContent = cfg.delta;
+            deltaEl.classList.remove('show', 'neg', 'pos');
+            if (cfg.deltaNeg) deltaEl.classList.add('neg');
+            if (cfg.deltaPos) deltaEl.classList.add('pos');
+            void deltaEl.offsetWidth;
+            deltaEl.classList.add('show');
+          }
+
+          await animateBalance(m.el, from, to, 500);
+        }
+
+        async function runStep(index) {
+          const step = STEPS[index];
+          if (!step) return;
+
+          const stepNum = index + 1;
+          currentStep = stepNum;
+          els.stepIndicator.textContent = `Step ${stepNum} / 10 — ${step.label}`;
+
+          setNodesActive(step.nodes || []);
+          buildArrowsForStep(step);
+
+          if (step.balance) {
+            for (const key of Object.keys(step.balance)) {
+              await applyBalanceUpdate(key, step.balance[key]);
+            }
+          }
+
+          if (step.banner) {
+            els.successBanner.classList.add('show');
+          }
+        }
+
+        function resetAll() {
+          clearTimeout(timer);
+          timer = null;
+          paused = false;
+          nextIndex = 0;
+          currentStep = 0;
+          balances.customer = 500;
+          balances.settlement = 0;
+          balances.merchant = 0;
+
+          els.balCustomer.textContent = '500.00';
+          els.balSettlement.textContent = '0.00';
+          els.balMerchant.textContent = '0.00';
+
+          [els.deltaCustomer, els.deltaSettlement, els.deltaMerchant].forEach((d) => {
+            d.classList.remove('show');
+          });
+
+          els.successBanner.classList.remove('show');
+          setNodesActive([]);
+          clearArrows();
+          els.stepIndicator.textContent = 'Step 0 / 10 — Press Start Demo';
+          document.getElementById('btnPause').textContent = '⏸ Pause';
+        }
+
+        async function playLoop(fromIndex) {
+          if (paused || fromIndex >= STEPS.length) return;
+          nextIndex = fromIndex;
+          await runStep(fromIndex);
+          nextIndex = fromIndex + 1;
+          if (nextIndex < STEPS.length && !paused) {
+            timer = setTimeout(() => playLoop(nextIndex), STEP_MS);
+          }
+        }
+
+        function startDemo() {
+          paused = false;
+          document.getElementById('btnPause').textContent = '⏸ Pause';
+          clearTimeout(timer);
+          playLoop(0);
+        }
+
+        function pauseDemo() {
+          paused = !paused;
+          const btn = document.getElementById('btnPause');
+          if (paused) {
+            clearTimeout(timer);
+            timer = null;
+            btn.textContent = '▶ Resume';
+          } else {
+            btn.textContent = '⏸ Pause';
+            if (nextIndex < STEPS.length) {
+              timer = setTimeout(() => playLoop(nextIndex), STEP_MS);
+            }
+          }
+        }
+
+        document.getElementById('btnStart').addEventListener('click', () => {
+          resetAll();
+          requestAnimationFrame(() => startDemo());
+        });
+
+        document.getElementById('btnPause').addEventListener('click', pauseDemo);
+        document.getElementById('btnReset').addEventListener('click', resetAll);
+
+        window.addEventListener('resize', () => {
+          if (currentStep > 0 && currentStep <= STEPS.length) {
+            buildArrowsForStep(STEPS[currentStep - 1]);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
